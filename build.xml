@@ -35,7 +35,7 @@
     <property name="dist" location="dist" />
     <property name="version.name" value="${ant.project.name}-${version}" />
     <property name="version.folder" location="${dist}/${version.name}" />
-    <property name="build.dir" location="${dist}/build" />
+    <property name="build.dir" location="${version.folder}" />
     <property name="res.dir" location="${build.dir}" />
     <property name="lib.dir" location="${build.dir}/lib" />
     <property name="lib.extra.dir" location="${build.dir}/lib.extra" />
@@ -399,7 +399,7 @@
         <java fork="true" classname="tv.phantombot.PhantomBot" dir="${build.dir}">
             <classpath>
                 <path refid="classpath" />
-                <path location="${build.dir}/${ant.project.name}.jar" />
+                <path location="${version.folder}/${ant.project.name}.jar" />
             </classpath>
         </java>
     </target>
