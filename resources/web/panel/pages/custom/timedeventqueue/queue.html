@@ -1,0 +1,91 @@
+<!--
+    Copyright (C) 2016-2026 phantombot.github.io/PhantomBot
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<main>
+    <style>
+        #teq-table>tbody>tr.teq-active {
+            background-color: rgba(60, 141, 188, 0.12);
+        }
+        #teq-table>tbody>tr.teq-expired {
+            background-color: rgba(221, 75, 57, 0.18);
+            animation: teq-pulse 1s ease-in-out infinite;
+        }
+        @keyframes teq-pulse {
+            0%   { background-color: rgba(221, 75, 57, 0.10); }
+            50%  { background-color: rgba(221, 75, 57, 0.35); }
+            100% { background-color: rgba(221, 75, 57, 0.10); }
+        }
+        .teq-remaining {
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+        }
+        .teq-content {
+            max-width: 420px;
+            word-break: break-word;
+            white-space: normal;
+        }
+    </style>
+
+    <!-- Header -->
+    <section class="content-header">
+        <h1>Timed Event Queue</h1>
+        <ol class="breadcrumb">
+            <li><a href="javascript:void(0);"><i class="fa fa-dashboard"></i> Home</a></li>
+            <li>Extra</li>
+            <li class="active">Timed Event Queue</li>
+        </ol>
+    </section>
+
+    <!-- Main content -->
+    <section class="content">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="box box-solid">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Queue</h3>
+                        <div class="box-tools pull-right">
+                            <span class="label label-default" id="teq-count">0 items</span>
+                        </div>
+                    </div>
+
+                    <div class="box-body table-responsive no-padding">
+                        <table class="table table-hover" id="teq-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 40px;">#</th>
+                                    <th>Sender</th>
+                                    <th>Content</th>
+                                    <th style="width: 150px;">Sent</th>
+                                    <th style="width: 120px;">Time left</th>
+                                    <th style="width: 230px;">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="teq-table-body">
+                                <tr id="teq-empty-row">
+                                    <td colspan="6" class="text-center text-muted" style="padding: 18px;">The queue is empty.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- timed event queue -->
+    <script src="js/pages/custom/timedeventqueue/queue.js"></script>
+</main>

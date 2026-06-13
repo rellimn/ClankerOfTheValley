@@ -1,0 +1,12 @@
+{
+    "nav": [
+        {
+            "label": "Timed Event Queue",
+            "folder": "custom/timedeventqueue",
+            "page": "queue.html",
+            "hash": "#queue.html",
+            "section": "extra"
+        }
+    ],
+    "cards": []
+}
