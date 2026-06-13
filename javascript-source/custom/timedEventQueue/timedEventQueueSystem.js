@@ -692,7 +692,7 @@
         }
 
         if (action === undefined) {
-            $.say($.whisperPrefix(sender) + 'Usage: !teq [add / accept / reject / complete / list / clear / accepting / pause / resume / addtime]');
+            $.say($.whisperPrefix(sender) + $.lang.get('timedeventqueue.usage'));
             return;
         }
 
@@ -704,7 +704,7 @@
                 seconds = parseInt(args[2], 10),
                 content = args.slice(3).join(' ');
             if (user === undefined || isNaN(seconds) || seconds <= 0) {
-                $.say($.whisperPrefix(sender) + 'Usage: !teq add [username] [seconds] [content...]');
+                $.say($.whisperPrefix(sender) + $.lang.get('timedeventqueue.add.usage'));
                 return;
             }
             var id = add({
@@ -712,16 +712,16 @@
                 content: content,
                 timeLeft: seconds,
                 onAccept: function (it) {
-                    $.say('[TEQ] Accepted ' + it.sender + ' — timer started for ' + it.timeLeft + 's.');
+                    $.say($.lang.get('timedeventqueue.cb.accepted', it.sender, it.timeLeft));
                 },
                 onReject: function (it) {
-                    $.say('[TEQ] Rejected ' + it.sender + '.');
+                    $.say($.lang.get('timedeventqueue.cb.rejected', it.sender));
                 },
                 onComplete: function (it) {
-                    $.say('[TEQ] Completed ' + it.sender + '.');
+                    $.say($.lang.get('timedeventqueue.cb.completed', it.sender));
                 }
             });
-            $.say($.whisperPrefix(sender) + (id === null ? 'Not accepting submissions right now.' : 'Added test item ' + id + '.'));
+            $.say($.whisperPrefix(sender) + (id === null ? $.lang.get('timedeventqueue.add.closed') : $.lang.get('timedeventqueue.add.success', id)));
             return;
         }
 
@@ -729,7 +729,7 @@
          * @commandpath teq accept [id] - Accepts an item (default: top pending) and starts its timer.
          */
         if ($.equalsIgnoreCase(action, 'accept')) {
-            $.say($.whisperPrefix(sender) + (accept(args[1]) ? 'Accepted.' : 'Nothing to accept (an item may already be active).'));
+            $.say($.whisperPrefix(sender) + (accept(args[1]) ? $.lang.get('timedeventqueue.accept.success') : $.lang.get('timedeventqueue.accept.fail')));
             return;
         }
 
@@ -737,7 +737,7 @@
          * @commandpath teq reject [id] - Rejects an item (default: top pending) and removes it.
          */
         if ($.equalsIgnoreCase(action, 'reject')) {
-            $.say($.whisperPrefix(sender) + (reject(args[1]) ? 'Rejected.' : 'Nothing to reject.'));
+            $.say($.whisperPrefix(sender) + (reject(args[1]) ? $.lang.get('timedeventqueue.reject.success') : $.lang.get('timedeventqueue.reject.fail')));
             return;
         }
 
@@ -745,7 +745,7 @@
          * @commandpath teq complete [id] - Completes the active (or specified) item and removes it.
          */
         if ($.equalsIgnoreCase(action, 'complete')) {
-            $.say($.whisperPrefix(sender) + (complete(args[1]) ? 'Completed.' : 'Nothing to complete.'));
+            $.say($.whisperPrefix(sender) + (complete(args[1]) ? $.lang.get('timedeventqueue.complete.success') : $.lang.get('timedeventqueue.complete.fail')));
             return;
         }
 
@@ -754,11 +754,11 @@
          */
         if ($.equalsIgnoreCase(action, 'accepting')) {
             if (args[1] === undefined) {
-                $.say($.whisperPrefix(sender) + 'Accepting submissions: ' + (isAccepting() ? 'ON' : 'OFF'));
+                $.say($.whisperPrefix(sender) + $.lang.get('timedeventqueue.accepting.status', (isAccepting() ? $.lang.get('timedeventqueue.accepting.on') : $.lang.get('timedeventqueue.accepting.off'))));
                 return;
             }
             setAccepting($.equalsIgnoreCase(args[1], 'on') || $.equalsIgnoreCase(args[1], 'true') || $.jsString(args[1]) === '1');
-            $.say($.whisperPrefix(sender) + 'Accepting submissions: ' + (isAccepting() ? 'ON' : 'OFF'));
+            $.say($.whisperPrefix(sender) + $.lang.get('timedeventqueue.accepting.status', (isAccepting() ? $.lang.get('timedeventqueue.accepting.on') : $.lang.get('timedeventqueue.accepting.off'))));
             return;
         }
 
@@ -766,7 +766,7 @@
          * @commandpath teq pause - Pauses the active item's timer.
          */
         if ($.equalsIgnoreCase(action, 'pause')) {
-            $.say($.whisperPrefix(sender) + (pause() ? 'Paused.' : 'Nothing to pause.'));
+            $.say($.whisperPrefix(sender) + (pause() ? $.lang.get('timedeventqueue.pause.success') : $.lang.get('timedeventqueue.pause.fail')));
             return;
         }
 
@@ -774,7 +774,7 @@
          * @commandpath teq resume - Resumes the active item's timer.
          */
         if ($.equalsIgnoreCase(action, 'resume')) {
-            $.say($.whisperPrefix(sender) + (resume() ? 'Resumed.' : 'Nothing to resume.'));
+            $.say($.whisperPrefix(sender) + (resume() ? $.lang.get('timedeventqueue.resume.success') : $.lang.get('timedeventqueue.resume.fail')));
             return;
         }
 
@@ -782,7 +782,7 @@
          * @commandpath teq addtime [seconds] - Adds (or subtracts, if negative) seconds on the active item.
          */
         if ($.equalsIgnoreCase(action, 'addtime')) {
-            $.say($.whisperPrefix(sender) + (addTime(args[1]) ? 'Adjusted timer.' : 'No active item / invalid amount.'));
+            $.say($.whisperPrefix(sender) + (addTime(args[1]) ? $.lang.get('timedeventqueue.addtime.success') : $.lang.get('timedeventqueue.addtime.fail')));
             return;
         }
 
@@ -792,11 +792,11 @@
         if ($.equalsIgnoreCase(action, 'list')) {
             var q = list();
             if (q.length === 0) {
-                $.say($.whisperPrefix(sender) + 'The timed event queue is empty.');
+                $.say($.whisperPrefix(sender) + $.lang.get('timedeventqueue.list.empty'));
             } else {
                 var parts = [];
                 for (var i = 0; i < q.length && i < 10; i++) {
-                    parts.push('#' + (i + 1) + ' ' + q[i].sender + ' [' + q[i].state + ']');
+                    parts.push($.lang.get('timedeventqueue.list.item', (i + 1), q[i].sender, q[i].state));
                 }
                 $.say($.whisperPrefix(sender) + parts.join(', '));
             }
@@ -808,7 +808,7 @@
          */
         if ($.equalsIgnoreCase(action, 'clear')) {
             clear();
-            $.say($.whisperPrefix(sender) + 'Cleared the timed event queue.');
+            $.say($.whisperPrefix(sender) + $.lang.get('timedeventqueue.clear.success'));
             return;
         }
     });

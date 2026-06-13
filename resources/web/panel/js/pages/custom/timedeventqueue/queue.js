@@ -28,6 +28,7 @@ $(function () {
     var SCRIPT = './custom/timedEventQueue/timedEventQueueSystem.js',
         SECTION = 'extra',
         SETTINGS_TABLE = 'timedEventQueueSettings',
+        LANG = window.TEQ_LANG || {},   // editable UI strings (see queue.lang.js)
         model = { accepting: true, items: [], history: [] },
         settings = { highlightStyle: 'pulse', soundEnabled: true, soundVolume: 35, soundTone: 'beep', warnThreshold: 10 },
         alerted = {},          // item ids we've already beeped for
@@ -63,6 +64,29 @@ $(function () {
         $('#teq-accepting-toggle').prop('disabled', !writable);
         $('#teq-set-save, #teq-set-highlight, #teq-set-sound-enabled, #teq-set-tone, #teq-set-volume, #teq-set-warn')
             .prop('disabled', !writable);
+    }
+
+    // Fill the static HTML strings from LANG (see queue.lang.js). Elements opt in via
+    // data-teq-lang (text), data-teq-lang-title (title attribute), or data-teq-lang-html (HTML).
+    function applyStaticLang() {
+        $('[data-teq-lang]').each(function () {
+            var v = LANG[$(this).attr('data-teq-lang')];
+            if (v !== undefined) {
+                $(this).text(v);
+            }
+        });
+        $('[data-teq-lang-title]').each(function () {
+            var v = LANG[$(this).attr('data-teq-lang-title')];
+            if (v !== undefined) {
+                $(this).attr('title', v);
+            }
+        });
+        $('[data-teq-lang-html]').each(function () {
+            var v = LANG[$(this).attr('data-teq-lang-html')];
+            if (v !== undefined) {
+                $(this).html(v);
+            }
+        });
     }
 
     /* ---- expiry sound (WebAudio; no binary asset needed) ---- */
@@ -332,7 +356,7 @@ $(function () {
             $btn.append(' ' + label);
         }
         if (!writable) {
-            $btn.prop('disabled', true).attr('title', 'Read-only panel user (no changes allowed).');
+            $btn.prop('disabled', true).attr('title', LANG.readonlyTitle);
         } else {
             $btn.on('click', handler);
         }
@@ -341,10 +365,10 @@ $(function () {
 
     function timeText(item) {
         if (item.state === 'expired') {
-            return 'TIME UP';
+            return LANG.timeUp;
         }
         if (item.state === 'active') {
-            return formatClock(remainingSeconds(item)) + (item.paused ? ' (paused)' : '');
+            return formatClock(remainingSeconds(item)) + (item.paused ? LANG.pausedSuffix : '');
         }
         return formatClock(item.timeLeft);
     }
@@ -362,7 +386,7 @@ $(function () {
         // # / drag handle
         var $first = $('<td/>');
         if (item.state === 'pending') {
-            $first.append($('<i/>', {'class': 'fa fa-bars teq-drag-handle', 'title': 'Drag to reorder'}));
+            $first.append($('<i/>', {'class': 'fa fa-bars teq-drag-handle', 'title': LANG.tipDrag}));
         }
         $first.append(document.createTextNode(index + 1));
         $tr.append($first);
@@ -389,31 +413,31 @@ $(function () {
                 moveBy(item.id, 1);
             }));
             if (item.id === topPid && !anyActive) {
-                $actions.append(iconBtn('btn-success', 'fa-check', 'Accept', function () {
+                $actions.append(iconBtn('btn-success', 'fa-check', LANG.btnAccept, function () {
                     doAction(function () { optAccept(item.id); }, ['accept', item.id]);
                 }));
             }
-            $actions.append(iconBtn('btn-danger', 'fa-times', 'Reject', function () {
+            $actions.append(iconBtn('btn-danger', 'fa-times', LANG.btnReject, function () {
                 doAction(function () { optRemove(item.id); }, ['reject', item.id]);
             }));
         } else {
             // active or expired
-            $actions.append(iconBtn('btn-default', 'fa-minus', '30s', function () {
+            $actions.append(iconBtn('btn-default', 'fa-minus', LANG.btnAdjust, function () {
                 doAction(function () { optAddTime(-30); }, ['addtime', '-30']);
             }));
-            $actions.append(iconBtn('btn-default', 'fa-plus', '30s', function () {
+            $actions.append(iconBtn('btn-default', 'fa-plus', LANG.btnAdjust, function () {
                 doAction(function () { optAddTime(30); }, ['addtime', '30']);
             }));
             if (item.paused) {
-                $actions.append(iconBtn('btn-warning', 'fa-play', 'Resume', function () {
+                $actions.append(iconBtn('btn-warning', 'fa-play', LANG.btnResume, function () {
                     doAction(optResume, ['resume']);
                 }));
             } else {
-                $actions.append(iconBtn('btn-warning', 'fa-pause', 'Pause', function () {
+                $actions.append(iconBtn('btn-warning', 'fa-pause', LANG.btnPause, function () {
                     doAction(optPause, ['pause']);
                 }));
             }
-            $actions.append(iconBtn('btn-primary', 'fa-flag-checkered', 'Complete', function () {
+            $actions.append(iconBtn('btn-primary', 'fa-flag-checkered', LANG.btnComplete, function () {
                 doAction(function () { optRemove(item.id); }, ['complete', item.id]);
             }));
         }
@@ -426,9 +450,9 @@ $(function () {
         var $badge = $('#teq-accepting-badge'),
             $toggle = $('#teq-accepting-toggle');
         if (model.accepting) {
-            $badge.text('Accepting').removeClass('label-danger').addClass('label-success');
+            $badge.text(LANG.badgeAccepting).removeClass('label-danger').addClass('label-success');
         } else {
-            $badge.text('Closed').removeClass('label-success').addClass('label-danger');
+            $badge.text(LANG.badgeClosed).removeClass('label-success').addClass('label-danger');
         }
         if ($toggle.length && $toggle.prop('checked') !== !!model.accepting) {
             $toggle.prop('checked', !!model.accepting);
@@ -444,14 +468,14 @@ $(function () {
         if (!model.history || model.history.length === 0) {
             $body.append($('<tr/>').append($('<td/>', {
                 'colspan': '4', 'class': 'text-center text-muted', 'style': 'padding: 14px;'
-            }).text('No history yet.')));
+            }).text(LANG.historyEmpty)));
             return;
         }
         model.history.forEach(function (h) {
             var $tr = $('<tr/>');
             $tr.append($('<td/>').append($('<span/>', {
                 'class': h.outcome === 'completed' ? 'teq-history-completed' : 'teq-history-rejected'
-            }).text(h.outcome === 'completed' ? 'Completed' : 'Rejected')));
+            }).text(h.outcome === 'completed' ? LANG.histCompleted : LANG.histRejected)));
             $tr.append($('<td/>').text(h.sender));
             $tr.append($('<td/>', {'class': 'teq-content'}).text(h.content));
             $tr.append($('<td/>').text(formatWhen(h.at)));
@@ -531,12 +555,12 @@ $(function () {
         }
         $body.empty();
 
-        $('#teq-count').text(model.items.length + (model.items.length === 1 ? ' item' : ' items'));
+        $('#teq-count').text(model.items.length + ' ' + (model.items.length === 1 ? LANG.itemsOne : LANG.itemsMany));
 
         if (model.items.length === 0) {
             $body.append($('<tr/>', {'id': 'teq-empty-row'}).append(
                 $('<td/>', {'colspan': '6', 'class': 'text-center text-muted', 'style': 'padding: 18px;'})
-                    .text('The queue is empty.')
+                    .text(LANG.queueEmpty)
             ));
             return;
         }
@@ -588,7 +612,7 @@ $(function () {
                 continue;
             }
             if (rem <= 0) {
-                $cell.text('TIME UP').removeClass('teq-warn');
+                $cell.text(LANG.timeUp).removeClass('teq-warn');
                 var $row = $('#teq-row-' + item.id).removeClass('teq-active');
                 var hl = settings.highlightStyle === 'none' ? '' : 'teq-hl-' + settings.highlightStyle;
                 if (hl) {
@@ -696,7 +720,7 @@ $(function () {
             keys: ['highlightStyle', 'soundEnabled', 'soundVolume', 'soundTone', 'warnThreshold'],
             values: [highlightStyle, soundEnabled, soundVolume, soundTone, warnThreshold]
         }, function () {
-            toastr.success('Saved timed event queue settings.');
+            toastr.success(LANG.toastSaved);
             render();
         });
     }
@@ -711,7 +735,7 @@ $(function () {
         $box.toggleClass('collapsed-box');
         var collapsed = $box.hasClass('collapsed-box');
         $(this).find('i').removeClass('fa-plus fa-minus').addClass(collapsed ? 'fa-plus' : 'fa-minus');
-        $(this).attr('title', collapsed ? 'Expand' : 'Collapse');
+        $(this).attr('title', collapsed ? LANG.tipExpand : LANG.tipCollapse);
     });
 
     $('#teq-set-save').on('click', saveSettings);
@@ -734,6 +758,7 @@ $(function () {
     });
 
     // Initial load + pollers (helpers.setInterval is auto-cleared on panel navigation).
+    applyStaticLang();
     applyWritable();
     loadSettings();
     fetchSnapshot();

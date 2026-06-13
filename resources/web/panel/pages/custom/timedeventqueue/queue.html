@@ -65,17 +65,17 @@
 
     <!-- Header -->
     <section class="content-header">
-        <h1>Timed Event Queue</h1>
+        <h1 data-teq-lang="title">Timed Event Queue</h1>
         <ol class="breadcrumb">
-            <li><a href="javascript:void(0);"><i class="fa fa-dashboard"></i> Home</a></li>
-            <li>Extra</li>
-            <li class="active">Timed Event Queue</li>
+            <li><a href="javascript:void(0);"><i class="fa fa-dashboard"></i> <span data-teq-lang="navHome">Home</span></a></li>
+            <li data-teq-lang="navExtra">Extra</li>
+            <li class="active" data-teq-lang="title">Timed Event Queue</li>
         </ol>
     </section>
 
     <!-- Main content -->
     <section class="content">
-        <div id="teq-readonly-banner" class="alert alert-warning" style="display: none;">
+        <div id="teq-readonly-banner" class="alert alert-warning" data-teq-lang-html="readonlyBanner" style="display: none;">
             <i class="fa fa-lock"></i> <b>Read-only access.</b> You can view the queue but not control it.
             Grant <b>Settings &rarr; Panel Users &rarr; Extra &rarr; Full Access</b> (or log in as the config user)
             to accept, reject, reorder, adjust timers, and change settings.
@@ -85,11 +85,11 @@
                 <!-- Queue box -->
                 <div class="box box-solid">
                     <div class="box-header with-border">
-                        <h3 class="box-title">Queue</h3>
+                        <h3 class="box-title" data-teq-lang="boxQueue">Queue</h3>
                         <div class="box-tools pull-right">
                             <span style="margin-right: 12px;">
                                 <span id="teq-accepting-badge" class="label label-success">Accepting</span>
-                                <label class="switch" data-toggle="tooltip" title="Accept new submissions" style="vertical-align: middle; margin-left: 6px;">
+                                <label class="switch" data-toggle="tooltip" data-teq-lang-title="toggleTip" title="Accept new submissions" style="vertical-align: middle; margin-left: 6px;">
                                     <input type="checkbox" id="teq-accepting-toggle" checked>
                                     <span class="slider round"></span>
                                 </label>
@@ -102,17 +102,17 @@
                         <table class="table table-hover" id="teq-table">
                             <thead>
                                 <tr>
-                                    <th style="width: 40px;">#</th>
-                                    <th>Sender</th>
-                                    <th>Content</th>
-                                    <th style="width: 150px;">Sent</th>
-                                    <th style="width: 120px;">Time left</th>
-                                    <th style="width: 300px;">Actions</th>
+                                    <th style="width: 50px;" data-teq-lang="colNum">#</th>
+                                    <th data-teq-lang="colSender">Sender</th>
+                                    <th data-teq-lang="colContent">Content</th>
+                                    <th style="width: 150px;" data-teq-lang="colSent">Sent</th>
+                                    <th style="width: 120px;" data-teq-lang="colTimeLeft">Time left</th>
+                                    <th style="width: 300px;" data-teq-lang="colActions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="teq-table-body">
                                 <tr id="teq-empty-row">
-                                    <td colspan="6" class="text-center text-muted" style="padding: 18px;">The queue is empty.</td>
+                                    <td colspan="6" class="text-center text-muted" style="padding: 18px;" data-teq-lang="queueEmpty">The queue is empty.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -122,9 +122,9 @@
                 <!-- Settings box (collapsible) -->
                 <div class="box box-solid collapsed-box">
                     <div class="box-header with-border">
-                        <h3 class="box-title"><i class="fa fa-cog"></i> Settings</h3>
+                        <h3 class="box-title"><i class="fa fa-cog"></i> <span data-teq-lang="boxSettings">Settings</span></h3>
                         <div class="box-tools pull-right">
-                            <button type="button" class="btn btn-box-tool" data-widget="collapse" title="Expand">
+                            <button type="button" class="btn btn-box-tool" data-widget="collapse" data-teq-lang-title="tipExpand" title="Expand">
                                 <i class="fa fa-plus"></i>
                             </button>
                         </div>
@@ -133,46 +133,46 @@
                         <form role="form">
                             <div class="row">
                                 <div class="col-md-4 form-group">
-                                    <label for="teq-set-highlight">Expiry highlight style</label>
+                                    <label for="teq-set-highlight" data-teq-lang="labelHighlight">Expiry highlight style</label>
                                     <select class="form-control" id="teq-set-highlight">
-                                        <option value="pulse">Pulse (flashing red)</option>
-                                        <option value="solid">Solid red</option>
-                                        <option value="border">Red border</option>
-                                        <option value="none">None</option>
+                                        <option value="pulse" data-teq-lang="optHlPulse">Pulse (flashing red)</option>
+                                        <option value="solid" data-teq-lang="optHlSolid">Solid red</option>
+                                        <option value="border" data-teq-lang="optHlBorder">Red border</option>
+                                        <option value="none" data-teq-lang="optHlNone">None</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4 form-group">
-                                    <label for="teq-set-sound-enabled">Play sound on expiry</label>
+                                    <label for="teq-set-sound-enabled" data-teq-lang="labelSound">Play sound on expiry</label>
                                     <select class="form-control" id="teq-set-sound-enabled">
-                                        <option value="true">Yes</option>
-                                        <option value="false">No</option>
+                                        <option value="true" data-teq-lang="optYes">Yes</option>
+                                        <option value="false" data-teq-lang="optNo">No</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4 form-group">
-                                    <label for="teq-set-tone">Sound tone</label>
+                                    <label for="teq-set-tone" data-teq-lang="labelTone">Sound tone</label>
                                     <select class="form-control" id="teq-set-tone">
-                                        <option value="beep">Beep</option>
-                                        <option value="low">Low</option>
-                                        <option value="high">High</option>
-                                        <option value="double">Double beep</option>
+                                        <option value="beep" data-teq-lang="optToneBeep">Beep</option>
+                                        <option value="low" data-teq-lang="optToneLow">Low</option>
+                                        <option value="high" data-teq-lang="optToneHigh">High</option>
+                                        <option value="double" data-teq-lang="optToneDouble">Double beep</option>
                                     </select>
                                 </div>
                             </div>
                             <div class="row">
                                 <div class="col-md-4 form-group">
-                                    <label for="teq-set-volume">Sound volume (0–100)</label>
+                                    <label for="teq-set-volume" data-teq-lang="labelVolume">Sound volume (0–100)</label>
                                     <input type="number" class="form-control" id="teq-set-volume" min="0" max="100" value="35">
                                 </div>
                                 <div class="col-md-4 form-group">
-                                    <label for="teq-set-warn">Warning threshold (seconds)</label>
+                                    <label for="teq-set-warn" data-teq-lang="labelWarn">Warning threshold (seconds)</label>
                                     <input type="number" class="form-control" id="teq-set-warn" min="0" value="10">
-                                    <span class="help-block" style="margin: 2px 0 0 0;">Countdown turns red at/below this. 0 disables.</span>
+                                    <span class="help-block" style="margin: 2px 0 0 0;" data-teq-lang="helpWarn">Countdown turns red at/below this. 0 disables.</span>
                                 </div>
                                 <div class="col-md-4 form-group" style="padding-top: 6px;">
-                                    <button type="button" class="btn btn-primary" id="teq-set-test">Test sound</button>
+                                    <button type="button" class="btn btn-primary" id="teq-set-test" data-teq-lang="btnTest">Test sound</button>
                                 </div>
                             </div>
-                            <button type="button" class="btn btn-success" id="teq-set-save"><i class="fa fa-save"></i> Save settings</button>
+                            <button type="button" class="btn btn-success" id="teq-set-save"><i class="fa fa-save"></i> <span data-teq-lang="btnSave">Save settings</span></button>
                         </form>
                     </div>
                 </div>
@@ -180,9 +180,9 @@
                 <!-- History box (collapsible) -->
                 <div class="box box-solid collapsed-box">
                     <div class="box-header with-border">
-                        <h3 class="box-title"><i class="fa fa-history"></i> History</h3>
+                        <h3 class="box-title"><i class="fa fa-history"></i> <span data-teq-lang="boxHistory">History</span></h3>
                         <div class="box-tools pull-right">
-                            <button type="button" class="btn btn-box-tool" data-widget="collapse" title="Expand">
+                            <button type="button" class="btn btn-box-tool" data-widget="collapse" data-teq-lang-title="tipExpand" title="Expand">
                                 <i class="fa fa-plus"></i>
                             </button>
                         </div>
@@ -191,15 +191,15 @@
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Outcome</th>
-                                    <th>Sender</th>
-                                    <th>Content</th>
-                                    <th style="width: 160px;">When</th>
+                                    <th data-teq-lang="colOutcome">Outcome</th>
+                                    <th data-teq-lang="colSender">Sender</th>
+                                    <th data-teq-lang="colContent">Content</th>
+                                    <th style="width: 160px;" data-teq-lang="colWhen">When</th>
                                 </tr>
                             </thead>
                             <tbody id="teq-history-body">
                                 <tr id="teq-history-empty">
-                                    <td colspan="4" class="text-center text-muted" style="padding: 14px;">No history yet.</td>
+                                    <td colspan="4" class="text-center text-muted" style="padding: 14px;" data-teq-lang="historyEmpty">No history yet.</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -210,5 +210,6 @@
     </section>
 
     <!-- timed event queue -->
+    <script src="js/pages/custom/timedeventqueue/queue.lang.js"></script>
     <script src="js/pages/custom/timedeventqueue/queue.js"></script>
 </main>
