@@ -574,6 +574,46 @@ For custom nav pages, use `window.__pbCustomPanel__` (loaded before your page sc
 
 Use the same `section` string as the manifest; `$.currentPage().panelSection` exposes the active value after navigation.
 
+### Adding to the built-in Dashboard (index) page
+
+The Dashboard — the landing page with the Uptime/Subs/Followers/Viewers boxes, Recent Events, Stream Information, and Quick Actions — is **NOT** a manifest-driven or plug-in widget system. The `nav`/`cards` manifest mechanism above only adds *new sidebar pages* and *Games cards*; it cannot inject a box onto the Dashboard. The Dashboard is a hand-coded AdminLTE Bootstrap grid, so adding a widget means editing stock files directly:
+
+| Piece | Path (source tree) |
+|---|---|
+| Dashboard markup | `resources/web/panel/pages/dashboard/dashboard.html` |
+| Dashboard logic | `resources/web/panel/js/pages/dashboard/dashboard.js` |
+| Stream-data source | `javascript-source/core/panelHandler.js` (`updateStreamData()`) |
+
+`resources/web/panel/` is the **source**; `dist/PhantomBot-custom/web/panel/` is the built copy produced by `ant jar`. **These are stock files — a PhantomBot upgrade will clobber edits.** There is no custom-injection hook for the Dashboard the way there is for sidebar pages; budget for re-applying after upgrades.
+
+**Data flow:**
+```
+core/panelHandler.js  updateStreamData()
+   → saveObject('panelData', 'stream', { followers, subs, viewers, title,
+                                          isLive, game, uptime, chatters })
+   → DB table panelData, key "stream", stored as JSON
+                         │
+                         ▼
+js/pages/dashboard/dashboard.js
+   socket.getDBValue('...', 'panelData', 'stream', cb)   ← once on load + every 10s
+   → JSON.parse → fills boxes by element id (#dashboard-viewers, #dashboard-uptime, …)
+```
+
+`updateStreamData()` is re-run on `twitchOnline`/`twitchOffline` and on the `panelDataRefresh` WS event; the browser also self-refreshes the counters on a 10-second `helpers.setInterval`.
+
+**To add a box that shows an existing `stream` field** (`followers`, `subs`, `viewers`, `title`, `isLive`, `game`, `uptime`, `chatters` — note `chatters` is published but not displayed by stock) — two-file change, no bot restart of logic needed:
+
+1. In `dashboard.html`, add a `small-box` (top row) or `box box-solid` (lower sections) with a unique element id, e.g. `<h3 id="dashboard-chatters">`.
+2. In `dashboard.js`, populate it in **both** places the stock counters are set: the initial-load block (inside `$(document).ready`, using the `tempData.*` object) **and** the 10-second refresh block (using the `e.*` object). Stock uses:
+   ```javascript
+   helpers.handlePanelSetInfo($('#dashboard-chatters').data('number', helpers.parseNumber(e.chatters)), 'dashboard-chatters', helpers.fixNumber(e.chatters));
+   ```
+   For click-to-hide parity, add the id to the `$('#dashboard-subs, #dashboard-followers, #dashboard-viewers').on('click', …)` selector.
+
+**To show a brand-new value** not in the `stream` object, also add it to the `saveObject('panelData', 'stream', { … })` literal in `updateStreamData()` (`panelHandler.js`), sourcing it from the relevant `$` API (`$.twitchcache.*`, `$.getFollows`, a cache, or your own module's export). It's then available as a field on the parsed `stream` object in `dashboard.js`.
+
+After editing, run `ant jar` (or copy the files into a running install's `web/panel/`) and hard-refresh the panel with **Ctrl+Shift+R** — panel assets are browser-cached.
+
 ---
 
 ## 14. Discord modules
@@ -663,6 +703,8 @@ Edit on the host; no image rebuild required. Entrypoint creates subdirectories o
 
 - `docs/guides/content/developerdocs/custommodules.md` — full manifest spec (source of phantombot.dev)
 - `docs/guides/content/moduleguides/addingcustommodules.md` — install guide
+- `resources/web/panel/pages/dashboard/dashboard.html` + `resources/web/panel/js/pages/dashboard/dashboard.js` — the built-in Dashboard page (hand-coded grid; see §13 "Adding to the built-in Dashboard")
+- `javascript-source/core/panelHandler.js` — `updateStreamData()` publishes the `panelData/stream` object the Dashboard reads
 - `docs/guides/content/developerdocs/registerchatcommand.md` — command registration
 - `javascript-source/core/` — init.js, commandRegister.js, lang.js, permissions.js, misc.js, customScripts.js (reloadcustom), commandCoolDown.js
 - `javascript-source/games/roll.js` — small, idiomatic example (settings, commands+subcommands, lang, points)
