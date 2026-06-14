@@ -64,7 +64,6 @@ RUN set -eux; \
 RUN set -eux; \
     cd "${BUILDDIR}/dist/${PROJECT_NAME}-${PROJECT_VERSION}/"; \
     mkdir "${DATADIR}/scripts"; \
-    mkdir "${DATADIR}/scripts/custom"; \
     mkdir "${DATADIR}/scripts/discord"; \
     mkdir "${DATADIR}/scripts/lang"; \
     mkdir "${DATADIR}/logs"; \
@@ -72,7 +71,7 @@ RUN set -eux; \
     mkdir -p "./web/panel/custom" "./web/panel/pages/custom" "./web/panel/js/pages/custom"; \
     mv "./addons" "${DATADIR}/"; \
     mv "./config" "${DATADIR}/"; \
-    mv "./scripts/custom" "${DATADIR}/scripts/custom/"; \
+    mv "./scripts/custom" "${DATADIR}/scripts/"; \
     mv "./scripts/discord/custom" "${DATADIR}/scripts/discord/"; \
     mv "./scripts/lang/custom" "${DATADIR}/scripts/lang/"; \
     mv "./web/panel/custom" "${DATADIR}/web/panel/custom"; \
