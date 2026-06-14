@@ -1,6 +1,6 @@
 services:
   phantombot:
-    container_name: phantombot
+    container_name: ${CLANKER_CONTAINER_NAME}
     build:
       context: .
       dockerfile: Dockerfile
