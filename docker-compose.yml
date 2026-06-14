@@ -6,19 +6,44 @@ services:
       dockerfile: Dockerfile
       args:
         PROJECT_VERSION: "1.0"
-    ports:
-      - "25000:25000"
     restart: unless-stopped
     volumes:
       - PhantomBot_data:/opt/PhantomBot_data
+    expose:
+      - "25000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:25000/"]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
     #
     # ------ Set any botlogin.txt variable here, with the PHANTOMBOT_ prefix
     # ------ Note that after first run, botlogin.txt takes priority
     # ------ None of the variables are required
     # ------ Uncomment the following line, then add your variables below it
     # ------ Remember to indent 2 spaces
-    #environment:
+    environment:
+      # Serve plain HTTP internally; Traefik handles TLS.
+      PHANTOMBOT_USEHTTPS: "false"
+      # Report SSL as enabled so the panel uses wss:// and secure cookies.
+      PHANTOMBOT_PROXYBYPASSHTTPS: "true"
       # If you uncomment this variable, your ENV variables will always override botlogin.txt
       # PHANTOMBOT_ENVOVERRIDE: true
+    networks:
+      - proxy
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.clanker.rule=Host(`clanker.wasenmiller.de`)"
+      - "traefik.http.routers.clanker.entrypoints=websecure"
+      - "traefik.http.routers.clanker.tls=true"
+      - "traefik.http.routers.clanker.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.clanker.middlewares=secure-headers@file,rate-limit@file"
+      - "traefik.http.services.clanker.loadbalancer.server.port=25000"
+
+networks:
+  proxy:
+    name: proxy
+    external: true
 volumes:
   PhantomBot_data:
