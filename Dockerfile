@@ -24,12 +24,13 @@ ARG BASEDIR=/opt/${PROJECT_NAME}
 ARG BUILDDIR=${BASEDIR}_build
 ARG LIBDIR=${BASEDIR}_lib
 ARG DATADIR=${BASEDIR}_data
-ARG ANT_ARGS=
+ARG ANT_ARGS=""
 
 ENV DEBIAN_FRONTEND=noninteractive
 RUN set -eux; \
     mkdir -p "${BUILDDIR}" "${DATADIR}"; \
     apt-get update; \
+    apt-get install -y --no-install-recommends git install-info; \
     cd root; apt-get download ant; \
     dpkg --ignore-depends=default-jre-headless --install ant_*.deb; \
     apt-get clean; \
@@ -39,7 +40,7 @@ RUN set -eux; \
         /var/tmp/* \
         /root/*.deb
 
-COPY build.xml ivysettings.xml ivy.xml "${BUILDDIR}/"
+COPY build.xml ivysettings.xml ivy.xml "${BUILDDIR}"/
 RUN set -eux; \
     cd "${BUILDDIR}"; \
     ant -noinput -buildfile build.xml -Disdocker=true ${ANT_ARGS} ivy-retrieve
