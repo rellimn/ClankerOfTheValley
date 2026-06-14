@@ -1096,6 +1096,12 @@ public final class PanelUserHandler {
         boolean res;
         if (manifestSection != null) {
             res = checkPanelUserSectionAccess(user, manifestSection, isWriteAction);
+        } else if (script.startsWith("./custom/")) {
+            // Nav-only custom modules (manifest declares nav but no card/scriptPath) register no
+            // server-side script->section mapping, so honor the section the panel sends from
+            // nav.section -- the same trust model checkDataAccess(...) uses for unregistered
+            // custom INIDB tables -- gated on the user's permission for that section.
+            res = checkPanelUserSectionAccess(user, section, isWriteAction);
         } else {
             res = PANEL_SECTION_SCRIPTS.containsKey(section) && PANEL_SECTION_SCRIPTS.get(section).contains(script)
                     && checkPanelUserSectionAccess(user, section, isWriteAction);
