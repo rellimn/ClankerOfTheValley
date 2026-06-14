@@ -8,7 +8,7 @@ services:
         PROJECT_VERSION: "1.0"
     restart: unless-stopped
     volumes:
-      - PhantomBot_data:/opt/PhantomBot_data
+      - ${CLANKER_VOLUME}:/opt/PhantomBot_data
     expose:
       - "25000"
     healthcheck:
@@ -48,4 +48,5 @@ networks:
     name: proxy
     external: true
 volumes:
-  PhantomBot_data:
+  clanker-prod:
+  clanker-staging:
