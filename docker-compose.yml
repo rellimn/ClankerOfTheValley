@@ -24,12 +24,14 @@ services:
     # ------ Uncomment the following line, then add your variables below it
     # ------ Remember to indent 2 spaces
     environment:
+      # If you uncomment this variable, your ENV variables will always override botlogin.txt
+      PHANTOMBOT_ENVOVERRIDE: "true"
       # Serve plain HTTP internally; Traefik handles TLS.
       PHANTOMBOT_USEHTTPS: "false"
       # Report SSL as enabled so the panel uses wss:// and secure cookies.
       PHANTOMBOT_PROXYBYPASSHTTPS: "true"
-      # If you uncomment this variable, your ENV variables will always override botlogin.txt
-      # PHANTOMBOT_ENVOVERRIDE: true
+      PHANTOMBOT_USEROLLBAR: "false"
+    env_file: ".env"
     networks:
       - proxy
     labels:
