@@ -1,0 +1,10 @@
+{
+    "queuecurrency.usage": "Usage: !$1 [your submission]",
+    "queuecurrency.misconfigured": "Paid queue submissions aren't set up correctly right now.",
+    "queuecurrency.noqueue": "The event queue isn't available right now.",
+    "queuecurrency.notenough": "You don't have enough — submitting costs $1.",
+    "queuecurrency.submitted": "Your entry was added to the queue. Cost: $1.",
+    "queuecurrency.submitted.free": "Your entry was added to the queue.",
+    "queuecurrency.refunded": "Your submission was rejected — $1 refunded.",
+    "queuecurrency.closed": "Submissions are closed right now — you were not charged."
+}

@@ -1,0 +1,82 @@
+<!--
+    Copyright (C) 2016-2026 phantombot.github.io/PhantomBot
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<main>
+    <section class="content-header">
+        <h1>Queue Submissions</h1>
+        <ol class="breadcrumb">
+            <li><a href="javascript:void(0);"><i class="fa fa-dashboard"></i> Home</a></li>
+            <li>Extra</li>
+            <li class="active">Queue Submissions</li>
+        </ol>
+    </section>
+
+    <section class="content">
+        <div id="mc-readonly-banner" class="callout callout-warning" style="display: none;">
+            You have read-only access to this section.
+        </div>
+
+        <div class="row">
+            <div class="col-md-7">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Paid event-queue submissions</h3>
+                    </div>
+                    <div class="box-body">
+                        <p class="text-muted">Let viewers spend a currency to add an entry to the
+                            <b>Timed Event Queue</b>. Mods bypass the cost; if a mod rejects an entry
+                            (<code>!teq reject</code>), the viewer is refunded.</p>
+
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="qc-enabled"> Enabled
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="qc-command">Command name</label>
+                            <input type="text" class="form-control" id="qc-command" placeholder="queueentry">
+                            <span class="help-block">Viewers run <code>!&lt;name&gt; your submission</code>.</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="qc-currency">Currency</label>
+                            <select class="form-control" id="qc-currency"></select>
+                            <span class="help-block">Define currencies on the Currencies page.</span>
+                        </div>
+                        <div class="form-group">
+                            <label for="qc-amount">Cost</label>
+                            <input type="number" class="form-control" id="qc-amount" value="100" min="0">
+                        </div>
+                        <div class="form-group">
+                            <label for="qc-timeleft">Entry time budget (seconds)</label>
+                            <input type="number" class="form-control" id="qc-timeleft" value="120" min="1">
+                            <span class="help-block">Passed to the queue as the entry's countdown when a mod accepts it.</span>
+                        </div>
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="qc-refund"> Refund the cost when an entry is rejected
+                            </label>
+                        </div>
+
+                        <button type="button" class="btn btn-primary" id="qc-save"><i class="fa fa-save"></i> Save</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/pages/custom/queuecurrency/settings.js"></script>
+</main>

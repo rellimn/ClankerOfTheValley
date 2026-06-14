@@ -1,0 +1,84 @@
+<!--
+    Copyright (C) 2016-2026 phantombot.github.io/PhantomBot
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<main>
+    <section class="content-header">
+        <h1>Currencies</h1>
+        <ol class="breadcrumb">
+            <li><a href="javascript:void(0);"><i class="fa fa-dashboard"></i> Home</a></li>
+            <li>Extra</li>
+            <li class="active">Currencies</li>
+        </ol>
+    </section>
+
+    <section class="content">
+        <div id="mc-readonly-banner" class="callout callout-warning" style="display: none;">
+            You have read-only access to this section.
+        </div>
+
+        <div class="row">
+            <div class="col-md-7">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Defined currencies</h3>
+                        <div class="box-tools pull-right">
+                            <button type="button" class="btn btn-primary btn-sm" id="mc-add-currency">
+                                <i class="fa fa-plus"></i> Add currency
+                            </button>
+                        </div>
+                    </div>
+                    <div class="box-body">
+                        <p class="text-muted">Define any number of currencies. Each has its own per-user balance.
+                            Price commands in a currency on the <b>Command Pricing</b> page.</p>
+                        <table id="currenciesTable" class="table table-striped" style="width: 100%;"></table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-5">
+                <div class="box box-info">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Adjust a balance</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label for="mc-bal-user">User</label>
+                            <input type="text" class="form-control" id="mc-bal-user" placeholder="username">
+                        </div>
+                        <div class="form-group">
+                            <label for="mc-bal-currency">Currency</label>
+                            <select class="form-control" id="mc-bal-currency"></select>
+                        </div>
+                        <div class="form-group">
+                            <label for="mc-bal-amount">Amount</label>
+                            <input type="number" class="form-control" id="mc-bal-amount" value="0" min="0">
+                        </div>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-default" id="mc-bal-lookup"><i class="fa fa-search"></i> Look up</button>
+                            <button type="button" class="btn btn-success" id="mc-bal-give"><i class="fa fa-plus"></i> Give</button>
+                            <button type="button" class="btn btn-warning" id="mc-bal-take"><i class="fa fa-minus"></i> Take</button>
+                            <button type="button" class="btn btn-primary" id="mc-bal-set"><i class="fa fa-pencil"></i> Set</button>
+                        </div>
+                        <p id="mc-bal-current" class="text-muted" style="margin-top: 12px;"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/pages/custom/multicurrency/currencies.js"></script>
+</main>

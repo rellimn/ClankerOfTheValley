@@ -1,0 +1,12 @@
+{
+    "nav": [
+        {
+            "label": "Queue Submissions",
+            "folder": "custom/queuecurrency",
+            "page": "settings.html",
+            "hash": "#settings.html",
+            "section": "extra"
+        }
+    ],
+    "cards": []
+}

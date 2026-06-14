@@ -1,0 +1,19 @@
+{
+    "nav": [
+        {
+            "label": "Currencies",
+            "folder": "custom/multicurrency",
+            "page": "currencies.html",
+            "hash": "#currencies.html",
+            "section": "extra"
+        },
+        {
+            "label": "Command Pricing",
+            "folder": "custom/multicurrency",
+            "page": "pricing.html",
+            "hash": "#pricing.html",
+            "section": "extra"
+        }
+    ],
+    "cards": []
+}

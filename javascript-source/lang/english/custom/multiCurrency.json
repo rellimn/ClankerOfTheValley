@@ -1,0 +1,16 @@
+{
+    "multicurrency.usage": "Usage: !currency [currencyId] | list | give | take | set | add | remove",
+    "multicurrency.none": "No currencies have been defined yet.",
+    "multicurrency.balance.self": "Your balances: $1.",
+    "multicurrency.balance.one": "You have $1.",
+    "multicurrency.list": "Defined currencies: $1.",
+    "multicurrency.unknown": "Unknown currency '$1'.",
+    "multicurrency.cmd.notenough": "You don't have enough — this command costs $1.",
+    "multicurrency.admin.usage": "Usage: !currency $1 [user] [currencyId] [amount]",
+    "multicurrency.admin.success": "$1: $2 now has $3.",
+    "multicurrency.add.usage": "Usage: !currency add [currencyId] [name] [plural]",
+    "multicurrency.add.invalid": "Invalid currency id. Use letters, digits and underscores.",
+    "multicurrency.add.success": "Currency '$1' defined.",
+    "multicurrency.remove.fail": "Usage: !currency remove [currencyId] (currency must exist).",
+    "multicurrency.remove.success": "Currency '$1' removed."
+}

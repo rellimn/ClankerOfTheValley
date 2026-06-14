@@ -1,0 +1,51 @@
+<!--
+    Copyright (C) 2016-2026 phantombot.github.io/PhantomBot
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<main>
+    <section class="content-header">
+        <h1>Command Pricing</h1>
+        <ol class="breadcrumb">
+            <li><a href="javascript:void(0);"><i class="fa fa-dashboard"></i> Home</a></li>
+            <li>Extra</li>
+            <li class="active">Command Pricing</li>
+        </ol>
+    </section>
+
+    <section class="content">
+        <div id="mc-readonly-banner" class="callout callout-warning" style="display: none;">
+            You have read-only access to this section.
+        </div>
+
+        <div class="row">
+            <div class="col-md-9">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Custom command prices</h3>
+                    </div>
+                    <div class="box-body">
+                        <p class="text-muted">Charge a currency when a custom command runs. Choose <b>points</b> to use the
+                            built-in currency (same as the stock cost field), or a currency you defined on the
+                            <b>Currencies</b> page. Set the amount to 0 to make the command free.</p>
+                        <table id="commandPricingTable" class="table table-striped" style="width: 100%;"></table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/pages/custom/multicurrency/pricing.js"></script>
+</main>
