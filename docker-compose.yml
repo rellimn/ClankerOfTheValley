@@ -36,7 +36,7 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.clanker.rule=Host(`clanker.wasenmiller.de`)"
+      - "traefik.http.routers.clanker.rule=Host(`${CLANKER_HOST}`)"
       - "traefik.http.routers.clanker.entrypoints=websecure"
       - "traefik.http.routers.clanker.tls=true"
       - "traefik.http.routers.clanker.tls.certresolver=letsencrypt"
