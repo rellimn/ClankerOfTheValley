@@ -36,12 +36,12 @@ services:
       - proxy
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.clanker.rule=Host(`${CLANKER_HOST}`)"
-      - "traefik.http.routers.clanker.entrypoints=websecure"
-      - "traefik.http.routers.clanker.tls=true"
-      - "traefik.http.routers.clanker.tls.certresolver=letsencrypt"
-      - "traefik.http.routers.clanker.middlewares=secure-headers@file,rate-limit@file"
-      - "traefik.http.services.clanker.loadbalancer.server.port=25000"
+      - "traefik.http.routers.clanker-${ENV}.rule=Host(`${CLANKER_HOST}`)"
+      - "traefik.http.routers.clanker-${ENV}.entrypoints=websecure"
+      - "traefik.http.routers.clanker-${ENV}.tls=true"
+      - "traefik.http.routers.clanker-${ENV}.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.clanker-${ENV}.middlewares=secure-headers@file,rate-limit@file"
+      - "traefik.http.services.clanker-${ENV}.loadbalancer.server.port=25000"
 
 networks:
   proxy:
