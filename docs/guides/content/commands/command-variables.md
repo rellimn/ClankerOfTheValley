@@ -2208,6 +2208,253 @@ No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
 
 &nbsp;
 
+### multiCurrencyTransformers
+#### addcurrency
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(addcurrency id:str amount:int)` - give the sender an amount of a currency
+- `(addcurrency id:str amount:int user:str)` - give the given user an amount of a currency
+
+**Labels:** twitch commandevent currency
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### chargecurrency
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(chargecurrency id:str amount:int)` - charge the sender an amount of a currency; cancel the whole response if they can't afford it
+
+**Labels:** twitch commandevent currency
+
+
+_NOTE: Use this to gate a custom command on a currency: put it at the start of the response and the rest only shows if the sender could pay._
+
+
+**Example:**
+```text
+Caster: !addcom !buyvip (chargecurrency gold 500)You are now VIP!
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### currency
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(currency id:str)` - the sender's balance in the given currency
+- `(currency id:str user:str)` - the given user's balance in the given currency
+
+**Labels:** twitch commandevent currency
+
+
+**Example:**
+```text
+Caster: !addcom !gold You have (currency gold) gold
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencybalstring
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(currencybalstring id:str)` - the sender's balance formatted with the currency name
+- `(currencybalstring id:str user:str)` - the given user's balance formatted with the currency name
+
+**Labels:** twitch commandevent currency
+
+
+**Example:**
+```text
+Caster: !addcom !bal You have (currencybalstring gold)
+User: !bal
+Bot: You have 50 Gold
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencyexists
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(currencyexists id:str)` - "true" if the currency is defined, otherwise "false"
+
+**Labels:** twitch noevent currency
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencylist
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(currencylist)` - a comma-separated list of the defined currencies as "id (name)"
+
+**Labels:** twitch noevent currency
+
+
+**Example:**
+```text
+Caster: !addcom !currencies Available currencies: (currencylist)
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencyname
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(currencyname id:str amount:int)` - the currency's name only (singular when amount is 1, otherwise plural)
+
+**Labels:** twitch noevent currency
+
+
+**Example:**
+```text
+Caster: !addcom !unit One unit is a (currencyname gold 1)
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencyprice
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(currencyprice)` - the custom-currency cost of the current command, formatted, or empty if it is not priced in a currency
+- `(currencyprice command:str)` - the custom-currency cost of the given command, formatted
+
+**Labels:** twitch commandevent currency
+
+
+**Example:**
+```text
+Caster: !addcom !spincost A spin costs (currencyprice spin)
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencystring
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(currencystring id:str amount:int)` - an amount formatted with the currency's singular/plural name
+
+**Labels:** twitch noevent currency
+
+
+**Example:**
+```text
+Caster: !addcom !cost This costs (currencystring gold 100)
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### setcurrency
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(setcurrency id:str amount:int)` - set the sender's balance in a currency
+- `(setcurrency id:str amount:int user:str)` - set the given user's balance in a currency
+
+**Labels:** twitch commandevent currency
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### takecurrency
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(takecurrency id:str amount:int)` - take an amount of a currency from the sender; zero out if they don't have enough
+- `(takecurrency id:str amount:int user:str)` - take an amount of a currency from the given user; zero out if they don't have enough
+
+**Labels:** twitch commandevent currency
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### takecurrencyorcancel
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(takecurrencyorcancel id:str amount:int)` - take an amount of a currency from the sender; cancel if they don't have enough
+- `(takecurrencyorcancel id:str amount:int user:str)` - take an amount of a currency from the given user; cancel if they don't have enough
+
+**Labels:** twitch commandevent currency
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
 ### points
 #### addpoints
 
@@ -2625,6 +2872,285 @@ Bot: Time Left until Christmas: 20 hours, 30 minutes and 55 seconds.
 Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
 -------|-----------|----------
 No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+### timedEventQueueTransformers
+#### queueaccept
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueaccept)` - accept the oldest pending item and start its timer; cancel if there is nothing to accept or one is already active
+- `(queueaccept id:str)` - accept the item with the given id
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### queueaccepting
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueaccepting)` - "on" if the queue is accepting new items, otherwise "off"
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### queueactive
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueactive)` - the content of the currently active queue item, or empty if none is active
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### queueactivesender
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueactivesender)` - the sender of the currently active queue item, or empty if none is active
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### queueactivetimeleft
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueactivetimeleft)` - the seconds remaining on the active item's countdown, or 0 if none is active
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### queueadd
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueadd seconds:int content:str)` - add an item to the queue from the sender with the given countdown and content; result is the new item id
+
+**Labels:** twitch commandevent queue
+
+
+**Example:**
+```text
+Caster: !addcom !request (queueadd 120 (query))
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### queueaddtime
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueaddtime seconds:int)` - add (or, if negative, subtract) seconds on the active item's countdown; cancel if there is no active item
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### queueclear
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueclear)` - clear the entire timed event queue
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### queuecomplete
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queuecomplete)` - complete the active item; cancel if there is nothing to complete
+- `(queuecomplete id:str)` - complete the item with the given id
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### queuelength
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queuelength)` - the total number of items in the timed event queue
+
+**Labels:** twitch noevent queue
+
+
+**Example:**
+```text
+Caster: !addcom !queue There are (queuelength) items in the queue
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### queuepause
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queuepause)` - pause the active item's countdown; cancel if there is no active item to pause
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### queuepending
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queuepending)` - the number of pending (not yet accepted) items in the queue
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### queueposition
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueposition)` - the 1-based position of the sender's first item in the queue, or 0 if they have none
+- `(queueposition user:str)` - the 1-based position of the given user's first item in the queue, or 0
+
+**Labels:** twitch commandevent queue
+
+
+**Example:**
+```text
+Caster: !addcom !pos You are at position (queueposition) in the queue
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### queuereject
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queuereject)` - reject the oldest pending item; cancel if there is nothing to reject
+- `(queuereject id:str)` - reject the item with the given id
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### queueresume
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueresume)` - resume the active item's countdown; cancel if there is no paused item to resume
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### queuesetaccepting
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queuesetaccepting state:str)` - set whether the queue accepts new items; state is on/off (also true/false or 1/0)
+
+**Labels:** twitch noevent queue
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
 
 &nbsp;
 
