@@ -157,7 +157,10 @@ $(function () {
                 .append(helpers.getInputGroup('mc-cur-name', 'text', 'Name (singular)', 'gold', def.name))
                 .append(helpers.getInputGroup('mc-cur-plural', 'text', 'Name (plural)', 'gold', def.plural)),
                 function () {
-                    var cid = sanitizeId($('#mc-cur-id').val()),
+                    // On edit the id is fixed — write to the original key, never the field value.
+                    // Renaming the id would orphan the currencyBal_<id> table and (previously)
+                    // created a second currency row.
+                    var cid = isEdit ? String(id) : sanitizeId($('#mc-cur-id').val()),
                         name = $('#mc-cur-name').val(),
                         plural = $('#mc-cur-plural').val();
 
@@ -218,12 +221,15 @@ $(function () {
                 refreshBalanceDisplay(user, id);
             };
 
+        // incr/decr forward the value verbatim over the socket (unlike updateDBValue, which
+        // coerces): the bot's dbincr/dbdecr handler reads it with getString(), so a bare number
+        // throws "JSONObject[\"value\"] is not a string". Send a string.
         if (mode === 'set') {
             socket.updateDBValue('mc_bal_set', table, user, amount, done);
         } else if (mode === 'give') {
-            socket.incrDBValue('mc_bal_give', table, user, amount, done);
+            socket.incrDBValue('mc_bal_give', table, user, String(amount), done);
         } else {
-            socket.decrDBValue('mc_bal_take', table, user, amount, done);
+            socket.decrDBValue('mc_bal_take', table, user, String(amount), done);
         }
     }
 

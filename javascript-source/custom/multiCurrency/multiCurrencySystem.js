@@ -23,12 +23,17 @@
  * its own per-user balance table. Commands can be priced in a chosen currency from the
  * panel, charging that currency instead of points.
  *
- * Integration with the stock command-cost path is done by WRAPPING (not editing) the three
- * by-reference $ functions init.js uses for pricing — $.priceCom, $.getCommandPrice and
- * $.returnCommandCost. For a command priced in a custom currency the wrapper gates on that
- * currency and returns -1 ("no points cost") so the hardcoded points deduction in init.js
- * is skipped; the real debit happens once in the 'command' bind below, after init.js has
- * cleared the permission + price + cooldown gates. See the project plan for the full rationale.
+ * Integration with the stock command-cost path is done by WRAPPING (not editing) the
+ * by-reference $.priceCom function init.js uses for pricing. init.js calls priceCom twice per
+ * command — once to gate before the cooldown check (init.js:778) and once after the command has
+ * run (init.js:815). For a command priced in a custom currency the wrapper ARMS on the first
+ * call and DEBITS on the second, so the charge lands only if the command actually executed, and
+ * exactly once; it always returns -1 ("no points cost") so init.js's hardcoded points deduction
+ * is skipped. $.returnCommandCost is wrapped the same way to refund the custom currency (the
+ * analog of the stock points refund) for the commands that call it. The debit must live here (a
+ * globally-invoked function) and NOT in a $.bind('command') hook: callHook('command') dispatches
+ * only to the command's OWNING script (init.js:505), so a bound handler would never fire for
+ * another module's priced command.
  *
  * Exports: $.currencies (see export block at the bottom).
  */
@@ -39,7 +44,14 @@
         CMD_TYPE = 'commandCurrencyType',   // key: command-key         value: currencyId
         CMD_PRICE = 'commandCurrencyPrice', // key: command-key         value: amount
         MOD_BYPASS = 'commandCurrencyModBypass', // key: command-key    value: boolean (mods bypass the cost)
-        maxUpdateRetries = 3;
+        maxUpdateRetries = 3,
+        // Armed-charge tokens bridging init.js's two priceCom calls per command (keyed by
+        // thread + user + command so concurrent/distinct dispatches don't collide). This is a
+        // plain JS object — string property lookup is value-based — guarded by a lock. A Java
+        // map must NOT be used here: Rhino passes concatenated JS strings as ConsString, which
+        // Java maps key by identity, so the gate token never matches the post token.
+        chargeArmed = {},
+        chargeLock = new Packages.java.util.concurrent.locks.ReentrantLock();
 
     /* ------------------------------------------------------------------ *
      * Currency definitions
@@ -49,18 +61,19 @@
         return $.inidb.exists(DEFS, $.jsString(id).toLowerCase());
     }
 
+    function blank(v) {
+        return v === undefined || v === null || $.jsString(v).trim() === '';
+    }
+
     function getDef(id) {
         id = $.jsString(id).toLowerCase();
         if (!$.inidb.exists(DEFS, id)) {
             return null;
         }
         try {
-            var obj = JSON.parse($.getIniDbString(DEFS, id, '{}'));
-            return {
-                id: id,
-                name: (obj.name === undefined || obj.name === null || obj.name === '') ? id : $.jsString(obj.name),
-                plural: (obj.plural === undefined || obj.plural === null || obj.plural === '') ? ((obj.name === undefined || obj.name === null || obj.name === '') ? id : $.jsString(obj.name)) : $.jsString(obj.plural)
-            };
+            var obj = JSON.parse($.getIniDbString(DEFS, id, '{}')),
+                name = blank(obj.name) ? id : $.jsString(obj.name);
+            return { id: id, name: name, plural: blank(obj.plural) ? name : $.jsString(obj.plural) };
         } catch (ex) {
             return { id: id, name: id, plural: id };
         }
@@ -84,10 +97,10 @@
         if (id === '') {
             return false;
         }
-        if (name === undefined || name === null || $.jsString(name).trim() === '') {
+        if (blank(name)) {
             name = id;
         }
-        if (plural === undefined || plural === null || $.jsString(plural).trim() === '') {
+        if (blank(plural)) {
             plural = name;
         }
         $.inidb.set(DEFS, id, JSON.stringify({ name: $.jsString(name), plural: $.jsString(plural) }));
@@ -291,11 +304,26 @@
             if (!chargeApplies(isMod, username, cc.key)) {
                 return -1; // mod exempt — allow, no charge
             }
-            if (getBalance(username, cc.id) < cc.amount) {
-                $.say($.whisperPrefix(username) + $.lang.get('multicurrency.cmd.notenough', getCurrencyString(cc.id, cc.amount)));
-                return 1; // block — init.js suppresses the command
+            // One token bridges init.js's gate call (778) and post-run call (815) for this command.
+            var token = $.jsString(Packages.java.lang.Thread.currentThread().getId()) + $.jsString(username).toLowerCase() + cc.key;
+            chargeLock.lock();
+            try {
+                if (chargeArmed[token] === true) {
+                    // Post-run call: the command cleared the cooldown gate and executed — debit now, once.
+                    delete chargeArmed[token];
+                    takeCurrency(username, cc.id, cc.amount);
+                    return -1;
+                }
+                // Gate call: verify affordability and arm; the debit happens on the post-run call above.
+                if (getBalance(username, cc.id) < cc.amount) {
+                    $.say($.whisperPrefix(username) + $.lang.get('multicurrency.cmd.notenough', getCurrencyString(cc.id, cc.amount)));
+                    return 1; // block — init.js suppresses the command
+                }
+                chargeArmed[token] = true;
+                return -1; // afford — return -1 so init.js skips its hardcoded points decr
+            } finally {
+                chargeLock.unlock();
             }
-            return -1; // afford — return -1 so init.js skips its hardcoded points decr; we debit in the 'command' bind
         };
         wrappedPriceCom.isMultiCurrencyWrapped = true;
         $.priceCom = wrappedPriceCom;
@@ -318,31 +346,9 @@
         $.returnCommandCost = wrappedReturnCommandCost;
     }
 
-    /* ------------------------------------------------------------------ *
-     * Debit bind — runs once per dispatched command (init.js callHook),
-     * only after permission + price + cooldown gates have passed. Mirrors
-     * the unconditional points decr at init.js:815 but for our currency.
-     * ------------------------------------------------------------------ */
-
-    $.bind('command', function (event) {
-        var command = $.jsString(event.getCommand()),
-            args = event.getArgs(),
-            sub = $.getSubCommandFromArguments(command, args),
-            cc = priceOf(command, sub);
-
-        if (cc === null) {
-            return;
-        }
-
-        var sender = event.getSender(),
-            isMod = $.checkUserPermission(sender, event.getTags(), $.PERMISSION.Mod);
-
-        if (!chargeApplies(isMod, sender, cc.key)) {
-            return;
-        }
-
-        takeCurrency(sender, cc.id, cc.amount);
-    });
+    /* The debit lives in the wrapped $.priceCom above, NOT in a $.bind('command') hook:
+     * callHook('command') only dispatches to the command's owning script (init.js:505), so a
+     * bound handler here would never fire for another module's priced command. */
 
     // !currency command — balance ops (currency definitions are primarily a panel job).
     // One @commandpath block per path: the doc parser keeps only the last path in a block
