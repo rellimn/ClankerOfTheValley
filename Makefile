@@ -1,9 +1,16 @@
 #!/usr/bin/make
 
+ifneq (,$(wildcard ./dev.env))
+include ./dev.env
+    export
+endif
+
+# Used env vars:
+# PROJECT_VERSION
+
 .PHONY: build run rebuild kill
 
 PROJECT_NAME = PhantomBot
-PROJECT_VERSION = custom
 BASEDIR = "./dist"
 BUILDDIR := "${PROJECT_NAME}-${PROJECT_VERSION}"
 RUNTIMEPATH := "${BUILDDIR}/java-runtime-linux/bin/java"
