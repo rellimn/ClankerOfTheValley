@@ -74,3 +74,7 @@ lib.extra/
 
 # Allow java-runtime files
 !resources/java-runtime*/*
+
+# External custom modules mounted at runtime (not part of the repo)
+/external-modules/*
+!/external-modules/.gitkeep

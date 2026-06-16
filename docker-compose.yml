@@ -9,6 +9,7 @@ services:
     restart: unless-stopped
     volumes:
       - ${CLANKER_VOLUME}:/opt/PhantomBot_data
+      - ${CLANKER_EXTERNAL:-./external-modules}:/opt/PhantomBot_external:ro
     expose:
       - "25000"
     healthcheck:

@@ -1,0 +1,4 @@
+# Default mount point for external (non-repo) custom modules.
+# Contents are git-ignored; the dir exists so the compose bind mount
+# (${CLANKER_EXTERNAL:-./external-modules}) has a source and Docker does
+# not auto-create it root-owned.
