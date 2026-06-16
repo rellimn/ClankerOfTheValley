@@ -871,6 +871,49 @@
     $.disablecomBlocked = getDisablecomBlocked;
     $.getCommandPrice = getCommandPrice;
 
+    /*
+     * @function buildInactiveCommandList
+     *
+     * Builds the list of permcom keys whose owning module is loaded but disabled,
+     * or which are orphaned (no live registration and no recorded owning script).
+     * Used by the Default Commands panel to hide stale rows. View-only: reads state,
+     * mutates nothing.
+     *
+     * @return {Array}
+     */
+    function buildInactiveCommandList() {
+        var inactive = [],
+            keys = $.inidb.GetKeyList('permcom', ''),
+            i, key, base, script;
+
+        for (i in keys) {
+            key = $.jsString(keys[i]);
+            base = key.split(' ')[0];
+
+            if (commandExists(base)) {
+                // Registered: hide only if its module is loaded but toggled off.
+                // Core scripts are not tracked as modules, so isModuleLoaded is false
+                // and they are treated as always-active.
+                script = $.jsString(getCommandScript(base));
+                if ($.bot.isModuleLoaded(script) && !$.bot.isModuleEnabled(script)) {
+                    inactive.push(key);
+                }
+            } else if ($.inidb.exists('tempDisabledCommandScript', base)) {
+                // Unregistered but its owning script is recorded (e.g. !disablecom).
+                // Keep visible while the module is active; hide only if module disabled.
+                script = $.jsString($.getIniDbString('tempDisabledCommandScript', base));
+                if ($.bot.isModuleLoaded(script) && !$.bot.isModuleEnabled(script)) {
+                    inactive.push(key);
+                }
+            } else {
+                // Orphaned: no live command and no known owning script.
+                inactive.push(key);
+            }
+        }
+
+        return inactive;
+    }
+
     $.bind('webPanelSocketUpdate', function (event) {
         if ($.equalsIgnoreCase(event.getScript(), './core/commandRegister.js')) {
             var args = event.getArgs(),
@@ -886,6 +929,8 @@
                 if (commandExists(commandLower)) {
                     tempUnRegisterChatCommand(commandLower);
                 }
+            } else if (eventName === 'get-inactive') {
+                $.panel.sendArray(event.getId(), buildInactiveCommandList());
             }
         }
     });

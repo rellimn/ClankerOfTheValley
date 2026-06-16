@@ -39,6 +39,46 @@ $(function () {
         }
     };
 
+    // View-only filter: hide commands whose owning module is inactive. State lives on
+    // window so the DataTables search extension (registered once) reads current values
+    // across SPA page navigations.
+    if (window.defaultCommandsFilter === undefined) {
+        window.defaultCommandsFilter = {hidden: {}, enabled: true};
+        $.fn.dataTable.ext.search.push(function (settings, data) {
+            if (settings.nTable.id !== 'defaultCommandsTable' || !window.defaultCommandsFilter.enabled) {
+                return true;
+            }
+            // Column 0 is '!' + command key; strip the leading '!' to match.
+            return !window.defaultCommandsFilter.hidden.hasOwnProperty(String(data[0]).replace(/^!/, ''));
+        });
+    }
+
+    // Hide-inactive defaults to on; persist the operator's choice.
+    let storedHideInactive = localStorage.getItem('phantombot_hideInactiveCommands');
+    window.defaultCommandsFilter.enabled = (storedHideInactive === null ? true : storedHideInactive === 'true');
+    $('#hide-inactive-commands').prop('checked', window.defaultCommandsFilter.enabled)
+            .off('change.hideinactive').on('change.hideinactive', function () {
+                window.defaultCommandsFilter.enabled = $(this).is(':checked');
+                localStorage.setItem('phantombot_hideInactiveCommands', window.defaultCommandsFilter.enabled);
+                if ($.fn.DataTable.isDataTable('#defaultCommandsTable')) {
+                    $('#defaultCommandsTable').DataTable().draw(false);
+                }
+            });
+
+    // Ask the bot which commands belong to inactive (disabled/orphaned) modules.
+    socket.wsEvent('default_inactive_commands_ws', './core/commandRegister.js', null, ['get-inactive'], function (inactiveResult) {
+        let hidden = {};
+        if (inactiveResult && inactiveResult.data) {
+            for (let i = 0; i < inactiveResult.data.length; i++) {
+                hidden[inactiveResult.data[i]] = true;
+            }
+        }
+        window.defaultCommandsFilter.hidden = hidden;
+        if ($.fn.DataTable.isDataTable('#defaultCommandsTable')) {
+            $('#defaultCommandsTable').DataTable().draw(false);
+        }
+    }, true);
+
     // Query all commands.
     socket.getDBTableValues('commands_get_all', 'permcom', function (results) {
         socket.getDBTableValues('custom_commands_get_all', 'command', function (customCommands) {
