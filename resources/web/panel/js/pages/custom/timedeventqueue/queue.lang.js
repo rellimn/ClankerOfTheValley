@@ -25,7 +25,7 @@
  */
 window.TEQ_LANG = {
     // Header / breadcrumb
-    title: 'Timed Event Queue',
+    title: 'Redeem Queue',
     navHome: 'Home',
     navExtra: 'Extra',
 
@@ -38,7 +38,7 @@ window.TEQ_LANG = {
     boxQueue: 'Queue',
     badgeAccepting: 'Accepting',
     badgeClosed: 'Closed',
-    toggleTip: 'Accept new submissions',
+    toggleTip: 'Accept new redeems',
     itemsOne: 'item',
     itemsMany: 'items',
     colNum: '#',
@@ -93,5 +93,5 @@ window.TEQ_LANG = {
     histRejected: 'Rejected',
 
     // Toast
-    toastSaved: 'Saved timed event queue settings.'
+    toastSaved: 'Saved queue settings.'
 };

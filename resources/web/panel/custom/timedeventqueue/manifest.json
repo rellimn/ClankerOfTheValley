@@ -1,7 +1,7 @@
 {
     "nav": [
         {
-            "label": "Timed Event Queue",
+            "label": "Redeem Queue",
             "folder": "custom/timedeventqueue",
             "page": "queue.html",
             "hash": "#queue.html",
