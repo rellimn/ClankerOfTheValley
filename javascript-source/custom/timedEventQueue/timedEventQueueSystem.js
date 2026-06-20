@@ -41,10 +41,12 @@
     var items = [],                                                         // ordered queue, oldest first
         activeId = null,                                                    // id of the currently counting-down item, or null
         accepting = true,                                                   // global "accept new items" override
+        linkedRedeemableIds = [],                                           // Channel Point rewards paused with accepting
         history = [],                                                       // recent completed/rejected items, newest first
         seq = 0,                                                            // monotonic id source
         _timerId = null,                                                    // JSTimers id of the active countdown
         _lock = new Packages.java.util.concurrent.locks.ReentrantLock(),
+        _redeemableSyncLock = new Packages.java.util.concurrent.locks.ReentrantLock(),
         SCRIPT = './custom/timedEventQueue/timedEventQueueSystem.js',
         TABLE = 'timedEventQueue',                                          // snapshot + history live here
         SETTINGS = 'timedEventQueueSettings',                              // panel-shared settings (accepting, display prefs)
@@ -586,6 +588,72 @@
     }
 
     /*
+     * @function parseLinkedRedeemableIds
+     * @param {String} raw persisted JSON array of Channel Point reward ids
+     * @return {Array} unique, non-empty reward ids
+     */
+    function parseLinkedRedeemableIds(raw) {
+        var parsed = [],
+            result = [],
+            seen = {};
+        try {
+            parsed = JSON.parse(raw);
+        } catch (ex) {
+            parsed = [];
+        }
+        if (!Array.isArray(parsed)) {
+            return result;
+        }
+        for (var i = 0; i < parsed.length; i++) {
+            var id = $.jsString(parsed[i]).trim();
+            if (id.length > 0 && seen[id] === undefined) {
+                seen[id] = true;
+                result.push(id);
+            }
+        }
+        return result;
+    }
+
+    /*
+     * @function syncLinkedRedeemables
+     * @param {Array} redeemableIds Channel Point reward ids to update
+     * @param {Boolean} paused whether those rewards should be paused
+     */
+    function syncLinkedRedeemables(redeemableIds, paused) {
+        if (redeemableIds.length === 0) {
+            return;
+        }
+        if (!$.channelpoints || typeof $.channelpoints.setRedeemablePaused !== 'function') {
+            $.log.error('[timedEventQueue] Channel Points support is unavailable; linked redeems were not updated.');
+            return;
+        }
+        for (var i = 0; i < redeemableIds.length; i++) {
+            $.channelpoints.setRedeemablePaused(redeemableIds[i], paused);
+        }
+    }
+
+    /*
+     * @function setLinkedRedeemableIds
+     * @param {Array} redeemableIds Channel Point reward ids linked to the accepting toggle
+     */
+    function setLinkedRedeemableIds(redeemableIds) {
+        _redeemableSyncLock.lock();
+        try {
+            _lock.lock();
+            try {
+                linkedRedeemableIds = parseLinkedRedeemableIds(JSON.stringify(redeemableIds || []));
+                $.setIniDbString(SETTINGS, 'linkedRedeemables', JSON.stringify(linkedRedeemableIds));
+            } finally {
+                _lock.unlock();
+            }
+            // Align newly linked rewards with the current queue state immediately.
+            syncLinkedRedeemables(linkedRedeemableIds, !accepting);
+        } finally {
+            _redeemableSyncLock.unlock();
+        }
+    }
+
+    /*
      * @function setAccepting
      *
      * Toggles the global "accept new items" override and persists it.
@@ -593,13 +661,21 @@
      * @param {Boolean} value
      */
     function setAccepting(value) {
-        _lock.lock();
+        _redeemableSyncLock.lock();
         try {
-            accepting = (value === true);
-            $.setIniDbBoolean(SETTINGS, 'accepting', accepting);
-            mirror();
+            var ids;
+            _lock.lock();
+            try {
+                accepting = (value === true);
+                $.setIniDbBoolean(SETTINGS, 'accepting', accepting);
+                ids = linkedRedeemableIds.slice();
+                mirror();
+            } finally {
+                _lock.unlock();
+            }
+            syncLinkedRedeemables(ids, !accepting);
         } finally {
-            _lock.unlock();
+            _redeemableSyncLock.unlock();
         }
     }
 
@@ -838,6 +914,9 @@
             // args are Java strings; coerce before the strict compare.
             var acceptVal = $.jsString(id);
             setAccepting(acceptVal === '1' || $.equalsIgnoreCase(acceptVal, 'true') || $.equalsIgnoreCase(acceptVal, 'on'));
+        } else if ($.equalsIgnoreCase(action, 'linkedredeemables')) {
+            setLinkedRedeemableIds(args.slice(1));
+            $.panel.sendAck(event.getId());
         } else if ($.equalsIgnoreCase(action, 'reorder')) {
             reorder(args.slice(1));
         } else if ($.equalsIgnoreCase(action, 'addtime')) {
@@ -868,6 +947,7 @@
         // Seed settings defaults so the panel's settings controls have values to read, and
         // load the persisted "accepting" override.
         accepting = $.getSetIniDbBoolean(SETTINGS, 'accepting', true);
+        linkedRedeemableIds = parseLinkedRedeemableIds($.getSetIniDbString(SETTINGS, 'linkedRedeemables', '[]'));
         $.getSetIniDbString(SETTINGS, 'highlightStyle', 'pulse');
         $.getSetIniDbBoolean(SETTINGS, 'soundEnabled', true);
         $.getSetIniDbNumber(SETTINGS, 'soundVolume', 35);
@@ -907,6 +987,7 @@
         pause: pause,
         resume: resume,
         setAccepting: setAccepting,
+        setLinkedRedeemableIds: setLinkedRedeemableIds,
         isAccepting: isAccepting,
         clear: clear,
         list: list,

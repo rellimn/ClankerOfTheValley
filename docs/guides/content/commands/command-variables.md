@@ -2979,6 +2979,31 @@ No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
 
 &nbsp;
 
+#### queueaddfor
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueaddfor user:str seconds:int content:str)` - add an item to the queue for the specified user with the given countdown and content
+
+**Labels:** twitch commandevent queue
+
+
+_NOTE: Requires a moderator-context command event. It sends submission and lifecycle status messages directly, then cancels the enclosing command response._
+
+
+**Example:**
+```text
+Caster: !addcom !request (queueaddfor (user) 120 (query))
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Yes
+
+&nbsp;
+
 #### queueaddtime
 
 Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_

@@ -152,6 +152,56 @@
     }
 
     /*
+     * @transformer queueaddfor
+     * @formula (queueaddfor user:str seconds:int content:str) add an item to the queue for the specified user with the given countdown and content
+     * @labels twitch commandevent queue
+     * @example Caster: !addcom !request (queueaddfor (user) 120 (query))
+     * @notes Requires a moderator-context command event. It sends submission and lifecycle status messages directly, then cancels the enclosing command response.
+     * @cancels
+     */
+    function queueaddfor(args) {
+        var pargs = $.parseArgs(args.args, ' ', 3, true),
+            requester = $.jsString(args.event.getSender());
+
+        if (!$.checkUserPermission(requester, args.event.getTags(), $.PERMISSION.Mod)) {
+            $.returnCommandCost(requester, args.event.getCommand(), false);
+            $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagadd.permission'));
+            return {cancel: true, result: ''};
+        }
+
+        if (pargs === null || pargs.length < 3 || isNaN(pargs[1]) || parseInt(pargs[1]) <= 0) {
+            $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagadd.usage'));
+            return {cancel: true, result: ''};
+        }
+
+        var user = $.jsString(pargs[0]),
+            seconds = parseInt(pargs[1]),
+            content = pargs[2],
+            id = $.timedEventQueue.add({
+                sender: user,
+                content: content,
+                timeLeft: seconds,
+                onAccept: function (it) {
+                    $.say($.lang.get('timedeventqueue.tagadd.accepted', it.sender, it.content, it.timeLeft));
+                },
+                onReject: function (it) {
+                    $.say($.lang.get('timedeventqueue.tagadd.rejected', it.sender, it.content));
+                },
+                onComplete: function (it) {
+                    $.say($.lang.get('timedeventqueue.tagadd.completed', it.sender, it.content));
+                }
+            });
+
+        if (id === null) {
+            $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagadd.closed', user));
+        } else {
+            $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagadd.added', user, seconds, content));
+        }
+
+        return {cancel: true, result: ''};
+    }
+
+    /*
      * @transformer queueaccept
      * @formula (queueaccept) accept the oldest pending item and start its timer; cancel if there is nothing to accept or one is already active
      * @formula (queueaccept id:str) accept the item with the given id
@@ -258,6 +308,7 @@
         new $.transformers.transformer('queueactivetimeleft', ['twitch', 'noevent', 'queue'], queueactivetimeleft),
         new $.transformers.transformer('queueaccepting', ['twitch', 'noevent', 'queue'], queueaccepting),
         new $.transformers.transformer('queueadd', ['twitch', 'commandevent', 'queue'], queueadd),
+        new $.transformers.transformer('queueaddfor', ['twitch', 'commandevent', 'queue'], queueaddfor),
         new $.transformers.transformer('queueaccept', ['twitch', 'noevent', 'queue'], queueaccept),
         new $.transformers.transformer('queuereject', ['twitch', 'noevent', 'queue'], queuereject),
         new $.transformers.transformer('queuecomplete', ['twitch', 'noevent', 'queue'], queuecomplete),
