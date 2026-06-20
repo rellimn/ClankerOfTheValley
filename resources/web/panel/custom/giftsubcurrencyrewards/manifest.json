@@ -1,0 +1,12 @@
+{
+    "nav": [
+        {
+            "label": "Gift Sub Rewards",
+            "folder": "custom/giftsubcurrencyrewards",
+            "page": "giftcurrencyrewards.html",
+            "hash": "#giftcurrencyrewards.html",
+            "section": "extra"
+        }
+    ],
+    "cards": []
+}

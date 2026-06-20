@@ -1,0 +1,152 @@
+<!--
+    Copyright (C) 2016-2026 phantombot.github.io/PhantomBot
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<main>
+    <section class="content-header">
+        <h1>Gift Sub Rewards</h1>
+        <ol class="breadcrumb">
+            <li><a href="javascript:void(0);"><i class="fa fa-dashboard"></i> Home</a></li>
+            <li>Extra</li>
+            <li class="active">Gift Sub Rewards</li>
+        </ol>
+    </section>
+
+    <section class="content">
+        <div id="gscr-readonly-banner" class="callout callout-warning" style="display: none;">
+            You have read-only access to this section.
+        </div>
+
+        <div id="gscr-no-currencies" class="callout callout-info" style="display: none;">
+            Define at least one custom currency before adding gift-sub rewards.
+        </div>
+
+        <div class="row">
+            <div class="col-md-5">
+                <div class="box box-primary">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Message</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="form-group">
+                            <label>
+                                <input type="checkbox" id="gscr-enabled"> Enabled
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label for="gscr-message">Chat message</label>
+                            <textarea class="form-control" id="gscr-message" rows="5"
+                                placeholder="Thank you (name) for gifting (giftedamount) subs. You have been given (currencygranted) (currencyname). Balance: (currencybal)"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Message tags</label>
+                            <div id="gscr-tag-palette" class="btn-toolbar" role="toolbar">
+                                <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(name)">(name)</button>
+                                <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(giftedamount)">(giftedamount)</button>
+                                <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(currencygranted)">(currencygranted)</button>
+                                <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(currencyname)">(currencyname)</button>
+                                <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(currencybal)">(currencybal)</button>
+                            </div>
+                        </div>
+                        <button type="button" class="btn btn-primary" id="gscr-save-settings">
+                            <i class="fa fa-save"></i> Save message
+                        </button>
+                    </div>
+                </div>
+
+                <div class="box box-info">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Preview</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="gscr-preview-user">Gifter</label>
+                                    <input type="text" class="form-control" id="gscr-preview-user" value="User">
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="form-group">
+                                    <label for="gscr-preview-subs">Gifted subs</label>
+                                    <input type="number" class="form-control" id="gscr-preview-subs" value="5" min="1">
+                                </div>
+                            </div>
+                        </div>
+                        <div class="well well-sm" id="gscr-message-preview"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-7">
+                <div class="box box-success">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Breakpoints</h3>
+                    </div>
+                    <div class="box-body">
+                        <div class="row">
+                            <div class="col-sm-4">
+                                <div class="form-group">
+                                    <label for="gscr-currency">Currency</label>
+                                    <select class="form-control" id="gscr-currency"></select>
+                                </div>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="form-group">
+                                    <label for="gscr-subs">Subs gifted</label>
+                                    <input type="number" class="form-control" id="gscr-subs" min="1" value="1">
+                                </div>
+                            </div>
+                            <div class="col-sm-3">
+                                <div class="form-group">
+                                    <label for="gscr-reward">Reward</label>
+                                    <input type="number" class="form-control" id="gscr-reward" min="1" value="1">
+                                </div>
+                            </div>
+                            <div class="col-sm-2">
+                                <label>&nbsp;</label>
+                                <button type="button" class="btn btn-success btn-block" id="gscr-save-breakpoint">
+                                    <i class="fa fa-plus"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <button type="button" class="btn btn-default btn-sm" id="gscr-clear-currency">
+                                <i class="fa fa-eraser"></i> Clear selected currency
+                            </button>
+                        </div>
+
+                        <table id="giftSubCurrencyRewardsTable" class="table table-striped" style="width: 100%;"></table>
+                    </div>
+                </div>
+
+                <div class="box box-default">
+                    <div class="box-header with-border">
+                        <h3 class="box-title">Selected Currency Ladder</h3>
+                    </div>
+                    <div class="box-body">
+                        <div id="gscr-ladder-empty" class="text-muted">No breakpoints configured.</div>
+                        <div id="gscr-ladder" class="progress" style="display: none; margin-bottom: 8px;"></div>
+                        <p class="text-muted" id="gscr-ladder-summary"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script src="js/pages/custom/giftsubcurrencyrewards/rewards.js"></script>
+</main>
