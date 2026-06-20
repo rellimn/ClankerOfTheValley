@@ -33,6 +33,11 @@
         return v === undefined || v === null || $.jsString(v).trim() === '';
     }
 
+    function reloadSettings() {
+        enabled = $.getSetIniDbBoolean(SETTINGS, 'enabled', true);
+        message = $.getSetIniDbString(SETTINGS, 'message', '');
+    }
+
     function customCurrenciesReady() {
         return $.currencies !== undefined && $.currencies !== null;
     }
@@ -432,9 +437,19 @@
     });
 
     /*
+     * @event webPanelSocketUpdate
+     */
+    $.bind('webPanelSocketUpdate', function (event) {
+        if ($.equalsIgnoreCase(event.getScript(), SCRIPT)) {
+            reloadSettings();
+        }
+    });
+
+    /*
      * @event initReady
      */
     $.bind('initReady', function () {
+        reloadSettings();
         $.registerChatCommand(SCRIPT, 'giftcurrencyreward', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'list', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'toggle', $.PERMISSION.Admin);
