@@ -69,6 +69,10 @@ window.TEQ_LANG = {
     labelVolume: 'Sound volume (0–100)',
     labelWarn: 'Warning threshold (seconds)',
     helpWarn: 'Countdown turns red at/below this. 0 disables.',
+    labelLinkedRedeemables: 'Linked Channel Point redeems',
+    helpLinkedRedeemables: 'Use Ctrl/Cmd-click to select the redeems that submit to this queue. Closing submissions pauses them; reopening resumes them. Only rewards created by PhantomBot can be updated.',
+    btnRefreshRedeemables: 'Refresh redeems',
+    noRedeemables: 'No Channel Point redeems found.',
     btnTest: 'Test sound',
     btnSave: 'Save settings',
 

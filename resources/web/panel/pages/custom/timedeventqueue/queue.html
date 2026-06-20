@@ -172,6 +172,16 @@
                                     <button type="button" class="btn btn-primary" id="teq-set-test" data-teq-lang="btnTest">Test sound</button>
                                 </div>
                             </div>
+                            <div class="form-group">
+                                <label for="teq-set-linked-redeemables" data-teq-lang="labelLinkedRedeemables">Linked Channel Point redeems</label>
+                                <div class="input-group">
+                                    <select class="form-control" id="teq-set-linked-redeemables" multiple size="5" aria-describedby="teq-linked-redeemables-help"></select>
+                                    <span class="input-group-btn">
+                                        <button type="button" class="btn btn-default" id="teq-linked-redeemables-refresh" data-teq-lang-title="btnRefreshRedeemables" title="Refresh redeems"><i class="fa fa-refresh"></i></button>
+                                    </span>
+                                </div>
+                                <span class="help-block" id="teq-linked-redeemables-help" data-teq-lang="helpLinkedRedeemables">Use Ctrl/Cmd-click to select the redeems that submit to this queue. Closing submissions pauses them; reopening resumes them. Only rewards created by PhantomBot can be updated.</span>
+                            </div>
                             <button type="button" class="btn btn-success" id="teq-set-save"><i class="fa fa-save"></i> <span data-teq-lang="btnSave">Save settings</span></button>
                         </form>
                     </div>

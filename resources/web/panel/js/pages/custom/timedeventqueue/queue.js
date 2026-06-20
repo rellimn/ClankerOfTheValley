@@ -30,7 +30,7 @@ $(function () {
         SETTINGS_TABLE = 'timedEventQueueSettings',
         LANG = window.TEQ_LANG || {},   // editable UI strings (see queue.lang.js)
         model = { accepting: true, items: [], history: [] },
-        settings = { highlightStyle: 'pulse', soundEnabled: true, soundVolume: 35, soundTone: 'beep', warnThreshold: 10 },
+        settings = { highlightStyle: 'pulse', soundEnabled: true, soundVolume: 35, soundTone: 'beep', warnThreshold: 10, linkedRedeemables: [] },
         alerted = {},          // item ids we've already beeped for
         suppressUntil = 0,     // skip overwriting the optimistic model until this time
         dragging = false,      // true while a sortable drag is in progress
@@ -62,7 +62,7 @@ $(function () {
         writable = isWritable();
         $('#teq-readonly-banner').toggle(!writable);
         $('#teq-accepting-toggle').prop('disabled', !writable);
-        $('#teq-set-save, #teq-set-highlight, #teq-set-sound-enabled, #teq-set-tone, #teq-set-volume, #teq-set-warn')
+        $('#teq-set-save, #teq-set-highlight, #teq-set-sound-enabled, #teq-set-tone, #teq-set-volume, #teq-set-warn, #teq-set-linked-redeemables, #teq-linked-redeemables-refresh')
             .prop('disabled', !writable);
     }
 
@@ -673,12 +673,31 @@ $(function () {
         $('#teq-set-tone').val(settings.soundTone);
         $('#teq-set-volume').val(settings.soundVolume);
         $('#teq-set-warn').val(settings.warnThreshold);
+        $('#teq-set-linked-redeemables').val(settings.linkedRedeemables);
+    }
+
+    function loadRedeemables() {
+        socket.query('channelpointslist', 'teq_linked_redeemables', null, function (result) {
+            var $select = $('#teq-set-linked-redeemables'),
+                selected = settings.linkedRedeemables.slice();
+            $select.empty();
+            if (result && Array.isArray(result.data) && result.data.length > 0) {
+                result.data.forEach(function (redeemable) {
+                    var title = redeemable.title || redeemable.id,
+                        suffix = redeemable.is_paused ? ' (' + LANG.badgeClosed + ')' : '';
+                    $select.append($('<option/>', {value: redeemable.id}).text(title + suffix));
+                });
+            } else {
+                $select.append($('<option/>', {value: '', disabled: true}).text(LANG.noRedeemables));
+            }
+            $select.val(selected);
+        });
     }
 
     function loadSettings() {
         socket.getDBValues('teq_settings', {
-            tables: [SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE],
-            keys: ['highlightStyle', 'soundEnabled', 'soundVolume', 'soundTone', 'warnThreshold']
+            tables: [SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE],
+            keys: ['highlightStyle', 'soundEnabled', 'soundVolume', 'soundTone', 'warnThreshold', 'linkedRedeemables']
         }, true, function (e) {
             if (e.highlightStyle) {
                 settings.highlightStyle = String(e.highlightStyle);
@@ -695,7 +714,15 @@ $(function () {
             if (e.warnThreshold !== undefined && e.warnThreshold !== null && e.warnThreshold !== '') {
                 settings.warnThreshold = Number(e.warnThreshold);
             }
+            if (e.linkedRedeemables) {
+                try {
+                    settings.linkedRedeemables = JSON.parse(e.linkedRedeemables);
+                } catch (ex) {
+                    settings.linkedRedeemables = [];
+                }
+            }
             applySettingsToForm();
+            loadRedeemables();
         });
     }
 
@@ -707,21 +734,25 @@ $(function () {
             soundEnabled = $('#teq-set-sound-enabled').val() === 'true',
             soundTone = $('#teq-set-tone').val(),
             soundVolume = Math.max(0, Math.min(100, Number($('#teq-set-volume').val()) || 0)),
-            warnThreshold = Math.max(0, Number($('#teq-set-warn').val()) || 0);
+            warnThreshold = Math.max(0, Number($('#teq-set-warn').val()) || 0),
+            linkedRedeemables = $('#teq-set-linked-redeemables').val() || [];
 
         settings.highlightStyle = highlightStyle;
         settings.soundEnabled = soundEnabled;
         settings.soundTone = soundTone;
         settings.soundVolume = soundVolume;
         settings.warnThreshold = warnThreshold;
+        settings.linkedRedeemables = linkedRedeemables;
 
         socket.updateDBValues('teq_settings_save', {
             tables: [SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE, SETTINGS_TABLE],
             keys: ['highlightStyle', 'soundEnabled', 'soundVolume', 'soundTone', 'warnThreshold'],
             values: [highlightStyle, soundEnabled, soundVolume, soundTone, warnThreshold]
         }, function () {
-            toastr.success(LANG.toastSaved);
-            render();
+            socket.wsEvent('teq_linked_redeemables_save', SCRIPT, '', ['linkedredeemables'].concat(linkedRedeemables), function () {
+                toastr.success(LANG.toastSaved);
+                render();
+            }, true, true);
         });
     }
 
@@ -746,6 +777,7 @@ $(function () {
         settings.soundVolume = Math.max(0, Math.min(100, Number($('#teq-set-volume').val()) || 0));
         beep();
     });
+    $('#teq-linked-redeemables-refresh').on('click', loadRedeemables);
     $('#teq-accepting-toggle').on('change', function () {
         if (!canWrite()) {
             $(this).prop('checked', !!model.accepting); // revert
