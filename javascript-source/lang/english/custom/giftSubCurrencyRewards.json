@@ -1,0 +1,20 @@
+{
+    "giftsubcurrencyrewards.usage": "Usage: !giftcurrencyreward list (currencyId) | toggle | message [message] | clearmsg | set [currencyId] [subsGifted] [currencyAmount] | remove [currencyId] [subsGifted] | clear [currencyId]",
+    "giftsubcurrencyrewards.missing.multicurrency": "The multi-currency system is not loaded.",
+    "giftsubcurrencyrewards.list.none": "No gift-sub custom-currency rewards have been configured.",
+    "giftsubcurrencyrewards.list.empty": "No gift-sub custom-currency rewards are configured for '$1'.",
+    "giftsubcurrencyrewards.list.one": "$1 gift-sub rewards: $2.",
+    "giftsubcurrencyrewards.list.all": "Gift-sub custom-currency rewards: $1.",
+    "giftsubcurrencyrewards.toggle.on": "Gift-sub custom-currency rewards are enabled.",
+    "giftsubcurrencyrewards.toggle.off": "Gift-sub custom-currency rewards are disabled.",
+    "giftsubcurrencyrewards.message.usage": "Usage: !giftcurrencyreward message [message]. Local tags: (name), (giftedamount), (amount), (currencygranted), (currencyname), (currencybal).",
+    "giftsubcurrencyrewards.message.set": "Gift-sub custom-currency reward message set.",
+    "giftsubcurrencyrewards.message.clear": "Gift-sub custom-currency reward message cleared.",
+    "giftsubcurrencyrewards.set.usage": "Usage: !giftcurrencyreward set [currencyId] [subsGifted] [currencyAmount]",
+    "giftsubcurrencyrewards.set.ok": "Gift-sub reward set: $1 gives $3 at $2 gifted sub(s).",
+    "giftsubcurrencyrewards.remove.usage": "Usage: !giftcurrencyreward remove [currencyId] [subsGifted]",
+    "giftsubcurrencyrewards.remove.missing": "No gift-sub reward breakpoint exists for $1 at $2 gifted sub(s).",
+    "giftsubcurrencyrewards.remove.ok": "Gift-sub reward breakpoint removed for $1 at $2 gifted sub(s).",
+    "giftsubcurrencyrewards.clear.usage": "Usage: !giftcurrencyreward clear [currencyId]",
+    "giftsubcurrencyrewards.clear.ok": "Gift-sub reward breakpoints cleared for '$1'."
+}

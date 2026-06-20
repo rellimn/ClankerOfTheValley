@@ -3410,6 +3410,92 @@ _These command tags are only available in the scripts which defined them_
 
 _Some scripts may also restrict the use of global command tags_
 
+### giftSubCurrencyRewards.js
+
+#### name
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(name)` - the user who gifted the subscription(s)
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### giftedamount
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(giftedamount)` - the number of subscriptions gifted by this gift event
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### amount
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(amount)` - the number of subscriptions gifted by this gift event
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencygranted
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(currencygranted)` - the amount of custom currency granted by this gift event
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencyname
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(currencyname)` - the custom currency name for the amount granted
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### currencybal
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(currencybal)` - the gifter's new balance, formatted with the custom currency name
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
 ### subscribeHandler.js
 
 #### amount
@@ -3726,6 +3812,28 @@ Global&nbsp;&nbsp; | Local
 Yes&nbsp;&nbsp; | No
 
 **Labels Used:** twitch commandevent noevent
+
+&nbsp;
+
+### giftSubCurrencyRewards.js
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+#### Hook: twitchSubscriptionGift
+
+Global&nbsp;&nbsp; | Local
+-------|-------
+Yes&nbsp;&nbsp; | Yes
+
+**Labels Used:** twitch noevent
+
+#### Hook: twitchMassSubscriptionGifted
+
+Global&nbsp;&nbsp; | Local
+-------|-------
+Yes&nbsp;&nbsp; | Yes
+
+**Labels Used:** twitch noevent
 
 &nbsp;
 
