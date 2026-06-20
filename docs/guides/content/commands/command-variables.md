@@ -3004,6 +3004,31 @@ No&nbsp;&nbsp; | No&nbsp;&nbsp; | Yes
 
 &nbsp;
 
+#### queueaddforcurrency
+
+Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_
+
+**Formulas:**
+
+- `(queueaddforcurrency currency:str amount:int user:str seconds:int content:str)` - charge the specified user, then add their item to the queue; refund the charge when the queue is closed or an operator rejects the item
+
+**Labels:** twitch commandevent queue currency
+
+
+_NOTE: Requires a moderator-context command event. It sends submission and lifecycle status messages directly, then cancels the enclosing command response._
+
+
+**Example:**
+```text
+Caster: !addcom !request (queueaddforcurrency dewdrops 3 (cpusername) 180 (cpinput))
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Yes
+
+&nbsp;
+
 #### queueaddtime
 
 Defined in script: _./javascript-source/custom/timedEventQueue/timedEventQueueTransformers.js_

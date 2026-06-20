@@ -202,6 +202,73 @@
     }
 
     /*
+     * @transformer queueaddforcurrency
+     * @formula (queueaddforcurrency currency:str amount:int user:str seconds:int content:str) charge the specified user, then add their item to the queue; refund the charge when the queue is closed or an operator rejects the item
+     * @labels twitch commandevent queue currency
+     * @example Caster: !addcom !request (queueaddforcurrency dewdrops 3 (cpusername) 180 (cpinput))
+     * @notes Requires a moderator-context command event. It sends submission and lifecycle status messages directly, then cancels the enclosing command response.
+     * @cancels
+     */
+    function queueaddforcurrency(args) {
+        var pargs = $.parseArgs(args.args, ' ', 5, true),
+            requester = $.jsString(args.event.getSender());
+
+        if (!$.checkUserPermission(requester, args.event.getTags(), $.PERMISSION.Mod)) {
+            $.returnCommandCost(requester, args.event.getCommand(), false);
+            $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagadd.permission'));
+            return {cancel: true, result: ''};
+        }
+
+        if (pargs === null || pargs.length < 5 || isNaN(pargs[1]) || parseInt(pargs[1]) <= 0
+                || isNaN(pargs[3]) || parseInt(pargs[3]) <= 0) {
+            $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagaddcurrency.usage'));
+            return {cancel: true, result: ''};
+        }
+
+        var currency = $.jsString(pargs[0]).toLowerCase(),
+            amount = parseInt(pargs[1]),
+            user = $.jsString(pargs[2]),
+            seconds = parseInt(pargs[3]),
+            content = pargs[4];
+
+        if ($.currencies === undefined || !$.currencies.exists(currency)) {
+            $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagaddcurrency.currency'));
+            return {cancel: true, result: ''};
+        }
+
+        var cost = $.jsString($.currencies.getString(currency, amount));
+        if (!$.currencies.charge(user, currency, amount)) {
+            $.say($.lang.get('timedeventqueue.tagaddcurrency.notenough', user, cost));
+            return {cancel: true, result: ''};
+        }
+
+        var id = $.timedEventQueue.add({
+            sender: user,
+            content: content,
+            timeLeft: seconds,
+            onAccept: function (it) {
+                $.say($.lang.get('timedeventqueue.tagadd.accepted', it.sender, it.content, it.timeLeft));
+            },
+            onReject: function (it) {
+                $.currencies.give(it.sender, currency, amount);
+                $.say($.lang.get('timedeventqueue.tagaddcurrency.rejected', it.sender, it.content, cost));
+            },
+            onComplete: function (it) {
+                $.say($.lang.get('timedeventqueue.tagadd.completed', it.sender, it.content));
+            }
+        });
+
+        if (id === null) {
+            $.currencies.give(user, currency, amount);
+            $.say($.lang.get('timedeventqueue.tagaddcurrency.closed', user, cost));
+        } else {
+            $.say($.lang.get('timedeventqueue.tagaddcurrency.added', user, seconds, content, cost));
+        }
+
+        return {cancel: true, result: ''};
+    }
+
+    /*
      * @transformer queueaccept
      * @formula (queueaccept) accept the oldest pending item and start its timer; cancel if there is nothing to accept or one is already active
      * @formula (queueaccept id:str) accept the item with the given id
@@ -309,6 +376,7 @@
         new $.transformers.transformer('queueaccepting', ['twitch', 'noevent', 'queue'], queueaccepting),
         new $.transformers.transformer('queueadd', ['twitch', 'commandevent', 'queue'], queueadd),
         new $.transformers.transformer('queueaddfor', ['twitch', 'commandevent', 'queue'], queueaddfor),
+        new $.transformers.transformer('queueaddforcurrency', ['twitch', 'commandevent', 'queue', 'currency'], queueaddforcurrency),
         new $.transformers.transformer('queueaccept', ['twitch', 'noevent', 'queue'], queueaccept),
         new $.transformers.transformer('queuereject', ['twitch', 'noevent', 'queue'], queuereject),
         new $.transformers.transformer('queuecomplete', ['twitch', 'noevent', 'queue'], queuecomplete),
