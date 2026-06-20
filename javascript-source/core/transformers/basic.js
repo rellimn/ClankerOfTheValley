@@ -81,7 +81,8 @@
             let arg = args.event.getArgs()[n - 1];
             if (args.argsep.startsWith('>')) {
                 args.argsep = args.argsep.substring(1);
-                arg = $.parseArgs(args.event.getArguments(), ' ', n, true);
+                let parsedArgs = $.parseArgs(args.event.getArguments(), ' ', n, true);
+                arg = parsedArgs !== null ? parsedArgs[n - 1] : undefined;
             }
             if (!args.args) {
                 return {result: arg !== undefined ? (args.argsep === '!' ? $.transformers.stripTrailingEscape(arg) : arg) : ''};
@@ -280,4 +281,3 @@
 
     $.transformers.addTransformers(transformers);
 })();
-
