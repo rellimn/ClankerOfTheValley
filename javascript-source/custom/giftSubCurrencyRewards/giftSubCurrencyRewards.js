@@ -26,8 +26,11 @@
     var SCRIPT = './custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js',
         SETTINGS = 'giftSubCurrencyRewards',
         REWARDS = 'giftSubCurrencyRewardBreakpoints',
+        MASS_GIFT_SETTLEMENT_MS = 3000,
         enabled = $.getSetIniDbBoolean(SETTINGS, 'enabled', true),
-        message = $.getSetIniDbString(SETTINGS, 'message', '');
+        message = $.getSetIniDbString(SETTINGS, 'message', ''),
+        pendingSingleGifts = {},
+        pendingSingleGiftsLock = new Packages.java.util.concurrent.locks.ReentrantLock();
 
     function blank(v) {
         return v === undefined || v === null || $.jsString(v).trim() === '';
@@ -254,6 +257,97 @@
         }
     }
 
+    function gifterKey(event) {
+        return $.jsString(event.getUsername()).toLowerCase();
+    }
+
+    function removePendingGift(gifter, pending) {
+        var gifts = pendingSingleGifts[gifter],
+            index;
+
+        if (gifts === undefined) {
+            return false;
+        }
+
+        index = gifts.indexOf(pending);
+        if (index === -1) {
+            return false;
+        }
+
+        gifts.splice(index, 1);
+        if (gifts.length === 0) {
+            delete pendingSingleGifts[gifter];
+        }
+        return true;
+    }
+
+    /*
+     * Live Twitch delivery can publish the recipient subgift USERNOTICEs before
+     * the submysterygift USERNOTICE. The Java event's fromBulk flag cannot be
+     * set in that ordering, so hold individual rewards briefly for reconciliation
+     * with a following mass-gift event.
+     */
+    function queueSingleGift(event) {
+        var gifter = gifterKey(event),
+            pending = {
+                'event': event,
+                'timer': null
+            };
+
+        pendingSingleGiftsLock.lock();
+        try {
+            if (pendingSingleGifts[gifter] === undefined) {
+                pendingSingleGifts[gifter] = [];
+            }
+            pendingSingleGifts[gifter].push(pending);
+            pending.timer = setTimeout(function () {
+                var shouldProcess;
+
+                pendingSingleGiftsLock.lock();
+                try {
+                    shouldProcess = removePendingGift(gifter, pending);
+                } finally {
+                    pendingSingleGiftsLock.unlock();
+                }
+
+                if (shouldProcess) {
+                    processGift(event, 1);
+                }
+            }, MASS_GIFT_SETTLEMENT_MS, SCRIPT);
+        } finally {
+            pendingSingleGiftsLock.unlock();
+        }
+    }
+
+    function processMassGift(event) {
+        var gifter = gifterKey(event),
+            amount = parsePositiveInt(event.getAmount()),
+            gifts,
+            pending = [];
+
+        if (amount === null) {
+            return;
+        }
+
+        pendingSingleGiftsLock.lock();
+        try {
+            gifts = pendingSingleGifts[gifter];
+            if (gifts !== undefined) {
+                pending = gifts.splice(Math.max(0, gifts.length - amount), amount);
+                if (gifts.length === 0) {
+                    delete pendingSingleGifts[gifter];
+                }
+            }
+        } finally {
+            pendingSingleGiftsLock.unlock();
+        }
+
+        for (var i = 0; i < pending.length; i++) {
+            clearTimeout(pending[i].timer);
+        }
+        processGift(event, amount);
+    }
+
     function listCurrency(currencyId) {
         var map = getRewardMap(currencyId),
             points = sortedBreakpoints(map),
@@ -286,7 +380,7 @@
         if (event.fromBulk()) {
             return;
         }
-        processGift(event, 1);
+        queueSingleGift(event);
     });
 
     /*
@@ -294,7 +388,7 @@
      * @usestransformers local global twitch noevent
      */
     $.bind('twitchMassSubscriptionGifted', function (event) {
-        processGift(event, event.getAmount());
+        processMassGift(event);
     });
 
     /*
