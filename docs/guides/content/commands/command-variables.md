@@ -2640,6 +2640,35 @@ No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
 
 &nbsp;
 
+### subscriptionTransformers
+#### requiresubtier
+
+Defined in script: _./javascript-source/custom/utils/subscriptionTransformers.js_
+
+**Formulas:**
+
+- `(requiresubtier tier:int message:str)` - cancels the command unless the sender has at least the given subscription tier; sends the optional message when the requirement is not met
+- `(requiresubtier tier:int @user:str message:str)` - cancels the command unless the given user has at least the given subscription tier; sends the optional message when the requirement is not met
+
+**Labels:** twitch commandevent meta
+
+
+_NOTE: `tier` must be 1, 2, or 3. Prefix an optional target user with `@`; without one, the sender is checked. The target prefix makes a message optional without treating its first word as a username._
+
+
+**Example:**
+```text
+Caster: !addcom !tier2 This command is for Tier 2 subscribers. (requiresubtier 2 Please subscribe at Tier 2 or higher.)
+User: !tier2
+Bot: Please subscribe at Tier 2 or higher.
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
 ### teams
 #### team_member_followers
 
