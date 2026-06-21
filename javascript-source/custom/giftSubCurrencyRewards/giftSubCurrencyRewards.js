@@ -29,9 +29,9 @@
         PROCESSED_PAYMENTS = 'giftSubCurrencyRewardPayments',
         MASS_GIFT_SETTLEMENT_MS = 3000,
         PAYMENT_SOURCES = {
-            'giftsub': {'label': 'Gift subs', 'unit': 'gift sub', 'setting': 'giftSubEurPerUnit', 'defaultRate': 1},
+            'giftsub': {'label': 'Gift Subs', 'unit': 'gift sub', 'setting': 'giftSubEurPerUnit', 'defaultRate': 1},
             'bits': {'label': 'Bits', 'unit': 'Bit', 'setting': 'bitsEurPerUnit', 'defaultRate': 0.005},
-            'streamelements': {'label': 'StreamElements donation', 'unit': 'EUR', 'defaultRate': 1}
+            'streamelements': {'label': '€ via StreamElements', 'unit': 'EUR', 'defaultRate': 1}
         },
         enabled,
         message,
