@@ -19,6 +19,7 @@ package com.gmt2001.twitch.eventsub.subscriptions.channel.channel_points.redempt
 import java.time.ZonedDateTime;
 import java.util.Collections;
 import java.util.Map;
+import java.util.UUID;
 
 import com.gmt2001.twitch.eventsub.EventSub;
 import com.gmt2001.twitch.eventsub.EventSubInternalNotificationEvent;
@@ -123,6 +124,46 @@ public final class ChannelPointsCustomRewardRedemptionAdd extends EventSubSubscr
         super();
         this.broadcaster_user_id = broadcaster_user_id;
         this.reward = new ChannelPointsReward(reward_id);
+    }
+
+    /**
+     * Creates a synthetic redemption for local testing. This factory does not contact Twitch or
+     * alter a reward's fulfillment state; downstream event handlers may make their own API calls.
+     *
+     * @param broadcaster_user_id The broadcaster's user ID
+     * @param broadcaster_user_login The broadcaster's login name
+     * @param broadcaster_user_name The broadcaster's display name
+     * @param user_id The redeeming user's ID
+     * @param user_login The redeeming user's login name
+     * @param user_name The redeeming user's display name
+     * @param reward_id The reward ID
+     * @param reward_title The reward title
+     * @param reward_cost The reward cost
+     * @param reward_prompt The reward prompt
+     * @param user_input The supplied redemption input
+     * @return A synthetic redemption event payload
+     */
+    public static ChannelPointsCustomRewardRedemptionAdd createTestRedemption(String broadcaster_user_id, String broadcaster_user_login,
+            String broadcaster_user_name, String user_id, String user_login, String user_name, String reward_id, String reward_title,
+            int reward_cost, String reward_prompt, String user_input) {
+        ChannelPointsCustomRewardRedemptionAdd redemption = new ChannelPointsCustomRewardRedemptionAdd(broadcaster_user_id);
+        redemption.broadcaster_user_login = broadcaster_user_login;
+        redemption.broadcaster_user_name = broadcaster_user_name;
+        redemption.user_id = user_id;
+        redemption.user_login = user_login;
+        redemption.user_name = user_name;
+        redemption.id = UUID.randomUUID().toString();
+        redemption.user_input = user_input == null ? "" : user_input;
+        redemption.sStatus = "unfulfilled";
+        redemption.status = RedemptionStatus.Unfulfilled;
+        redemption.reward = new ChannelPointsReward(new org.json.JSONObject()
+                .put("id", reward_id)
+                .put("title", reward_title)
+                .put("cost", reward_cost)
+                .put("prompt", reward_prompt == null ? "" : reward_prompt));
+        redemption.redeemed_at = ZonedDateTime.now();
+        redemption.sRedeemed_at = redemption.redeemed_at.toString();
+        return redemption;
     }
 
     @Override
