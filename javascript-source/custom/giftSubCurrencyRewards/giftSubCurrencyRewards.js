@@ -26,16 +26,19 @@
     var SCRIPT = './custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js',
         SETTINGS = 'giftSubCurrencyRewards',
         FORMULAS = 'giftSubCurrencyRewardFormulas',
+        PROCESSED_PAYMENTS = 'giftSubCurrencyRewardPayments',
         MASS_GIFT_SETTLEMENT_MS = 3000,
         PAYMENT_SOURCES = {
             'giftsub': {'label': 'Gift subs', 'unit': 'gift sub', 'setting': 'giftSubEurPerUnit', 'defaultRate': 1},
-            'bits': {'label': 'Bits', 'unit': 'Bit', 'setting': 'bitsEurPerUnit', 'defaultRate': 0.005}
+            'bits': {'label': 'Bits', 'unit': 'Bit', 'setting': 'bitsEurPerUnit', 'defaultRate': 0.005},
+            'streamelements': {'label': 'StreamElements donation', 'unit': 'EUR', 'defaultRate': 1}
         },
         enabled,
         message,
         sourceRates = {},
         pendingSingleGifts = {},
-        pendingSingleGiftsLock = new Packages.java.util.concurrent.locks.ReentrantLock();
+        pendingSingleGiftsLock = new Packages.java.util.concurrent.locks.ReentrantLock(),
+        processedPaymentsLock = new Packages.java.util.concurrent.locks.ReentrantLock();
 
     function blank(v) {
         return v === undefined || v === null || $.jsString(v).trim() === '';
@@ -51,13 +54,19 @@
         return isNaN(n) || n <= 0 ? null : n;
     }
 
+    function parsePositiveAmount(v) {
+        return positiveNumber(v, null);
+    }
+
     function reloadSettings() {
         var source;
         enabled = $.getSetIniDbBoolean(SETTINGS, 'enabled', true);
         message = $.getSetIniDbString(SETTINGS, 'message', '');
         for (source in PAYMENT_SOURCES) {
             if (PAYMENT_SOURCES.hasOwnProperty(source)) {
-                sourceRates[source] = positiveNumber($.getSetIniDbFloat(SETTINGS, PAYMENT_SOURCES[source].setting, PAYMENT_SOURCES[source].defaultRate), PAYMENT_SOURCES[source].defaultRate);
+                sourceRates[source] = PAYMENT_SOURCES[source].setting === undefined
+                    ? PAYMENT_SOURCES[source].defaultRate
+                    : positiveNumber($.getSetIniDbFloat(SETTINGS, PAYMENT_SOURCES[source].setting, PAYMENT_SOURCES[source].defaultRate), PAYMENT_SOURCES[source].defaultRate);
             }
         }
     }
@@ -276,7 +285,7 @@
             return;
         }
 
-        units = parsePositiveInt(units);
+        units = parsePositiveAmount(units);
         donor = $.jsString(donor).toLowerCase();
         if (units === null || $.equalsIgnoreCase(donor, 'anonymous')) {
             return;
@@ -411,6 +420,49 @@
         processPayment(event, 'bits', event.getUsername(), event.getBits());
     });
 
+    /*
+     * StreamElements sends its donation amount in the reported currency. This
+     * adapter intentionally accepts EUR only; no exchange-rate conversion is
+     * performed for other currencies.
+     *
+     * @event streamElementsDonation
+     * @usestransformers local global twitch noevent
+     */
+    $.bind('streamElementsDonation', function (event) {
+        var data,
+            donation,
+            donationId,
+            shouldProcess = false;
+
+        try {
+            data = JSON.parse(event.getJsonString());
+            donation = data.donation;
+            if (donation === undefined || donation.user === undefined || blank(donation.user.username) || String(donation.currency).toUpperCase() !== 'EUR' || parsePositiveAmount(donation.amount) === null) {
+                return;
+            }
+            donationId = String(data._id);
+            if (donationId === '') {
+                return;
+            }
+        } catch (ex) {
+            return;
+        }
+
+        processedPaymentsLock.lock();
+        try {
+            if (!$.inidb.exists(PROCESSED_PAYMENTS, 'streamelements:' + donationId)) {
+                $.inidb.set(PROCESSED_PAYMENTS, 'streamelements:' + donationId, 'true');
+                shouldProcess = true;
+            }
+        } finally {
+            processedPaymentsLock.unlock();
+        }
+
+        if (shouldProcess) {
+            processPayment(event, 'streamelements', donation.user.username, donation.amount);
+        }
+    });
+
     /* @event command */
     $.bind('command', function (event) {
         var sender = event.getSender(),
@@ -461,7 +513,7 @@
         if (action === 'source') {
             source = args.length > 1 ? $.jsString(args[1]).toLowerCase() : '';
             rate = args.length > 2 ? positiveNumber(args[2], null) : null;
-            if (!PAYMENT_SOURCES.hasOwnProperty(source) || rate === null) {
+            if (!PAYMENT_SOURCES.hasOwnProperty(source) || PAYMENT_SOURCES[source].setting === undefined || rate === null) {
                 $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.source.usage'));
                 return;
             }

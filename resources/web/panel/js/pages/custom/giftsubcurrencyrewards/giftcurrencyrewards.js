@@ -211,10 +211,10 @@ $(function () {
     }
 
     function renderPreview() {
-        var source = String($('#gscr-preview-source').val() || 'giftsub'), units = parseInt($('#gscr-preview-units').val(), 10), rate,
+        var source = String($('#gscr-preview-source').val() || 'giftsub'), units = parseFloat($('#gscr-preview-units').val()), rate,
             euros, currencyId = String($('#gscr-currency').val() || ''), formula, granted, msg, user;
         if (isNaN(units) || units <= 0) { units = 1; }
-        rate = parseFloat(source === 'bits' ? $('#gscr-bits-eur').val() : $('#gscr-giftsub-eur').val());
+        rate = source === 'streamelements' ? 1 : parseFloat(source === 'bits' ? $('#gscr-bits-eur').val() : $('#gscr-giftsub-eur').val());
         if (!isFinite(rate) || rate <= 0) { rate = 0; }
         euros = formatEuros(units * rate);
         formula = formulas[currencyId] || String($('#gscr-formula').val() || '');
@@ -222,13 +222,13 @@ $(function () {
         granted = granted === null ? 0 : Math.max(0, Math.floor(granted));
         user = String($('#gscr-preview-user').val() || 'User');
         msg = String($('#gscr-message').val() || $('#gscr-message').attr('placeholder') || '')
-            .replace(/\(name\)/g, user).replace(/\(source\)/g, source === 'bits' ? 'Bits' : 'Gift subs')
+            .replace(/\(name\)/g, user).replace(/\(source\)/g, source === 'bits' ? 'Bits' : source === 'streamelements' ? 'StreamElements donation' : 'Gift subs')
             .replace(/\(unitamount\)/g, String(units)).replace(/\(euramount\)/g, String(euros))
             .replace(/\(amount\)/g, String(units)).replace(/\(giftedamount\)/g, String(units))
             .replace(/\(currencygranted\)/g, String(granted))
             .replace(/\(currencyname\)/g, currencyId === '' ? '' : currencyName(currencyId, granted))
             .replace(/\(currencybal\)/g, currencyId === '' ? '' : String(granted) + ' ' + currencyName(currencyId, granted));
-        $('#gscr-preview-math').text(units + ' ' + (source === 'bits' ? 'Bits' : 'gift subs') + ' × ' + rate + ' = ' + euros + ' EUR; floor(' + (formula || 'no formula') + ') = ' + granted);
+        $('#gscr-preview-math').text(units + ' ' + (source === 'bits' ? 'Bits' : source === 'streamelements' ? 'EUR' : 'gift subs') + ' × ' + rate + ' = ' + euros + ' EUR; floor(' + (formula || 'no formula') + ') = ' + granted);
         $('#gscr-message-preview').text(msg);
     }
 

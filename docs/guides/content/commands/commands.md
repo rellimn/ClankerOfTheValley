@@ -181,6 +181,7 @@ Parameters enclosed in parenthesis `( )` are optional when using the command
 | ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward source [giftsub&#124;bits] [EUR per unit] | - Set a source conversion rate |
 | ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward set [currencyId] [formula] | - Set an EUR-to-currency formula |
 | ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward remove [currencyId] | - Remove an EUR-to-currency formula |
+| ./custom/utils/testRedeem.js | !testredeem reward-id user [user input] | - Emits a synthetic Channel Points redemption for a configured reward and user |
 | ./discord/core/accountLink.js | !account link [code] | - Completes an account link for Discord. |
 | ./games/8ball.js | !8ball [question] | - Ask the 8ball for advice |
 | ./games/adventureSystem.js | !adventure [amount] | - Start/join an adventure |

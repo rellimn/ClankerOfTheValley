@@ -3964,6 +3964,14 @@ Yes&nbsp;&nbsp; | Yes
 
 **Labels Used:** twitch noevent
 
+#### Hook: streamElementsDonation
+
+Global&nbsp;&nbsp; | Local
+-------|-------
+Yes&nbsp;&nbsp; | Yes
+
+**Labels Used:** twitch noevent
+
 &nbsp;
 
 ### discord / customCommands.js
