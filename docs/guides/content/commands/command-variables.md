@@ -3497,21 +3497,7 @@ Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCur
 
 **Formulas:**
 
-- `(name)` - the user who gifted the subscription(s)
-
-Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
--------|-----------|----------
-No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
-
-&nbsp;
-
-#### giftedamount
-
-Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
-
-**Formulas:**
-
-- `(giftedamount)` - the number of subscriptions gifted by this gift event
+- `(name)` - the user who made the payment
 
 Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
 -------|-----------|----------
@@ -3525,7 +3511,63 @@ Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCur
 
 **Formulas:**
 
-- `(amount)` - the number of subscriptions gifted by this gift event
+- `(amount)` - the number of source units paid
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### giftedamount
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(giftedamount)` - compatibility alias for (amount)
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### source
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(source)` - the payment source name
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### unitamount
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(unitamount)` - the number of source units paid
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### euramount
+
+Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
+
+**Formulas:**
+
+- `(euramount)` - the payment value in EUR after the source conversion
 
 Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
 -------|-----------|----------
@@ -3539,7 +3581,7 @@ Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCur
 
 **Formulas:**
 
-- `(currencygranted)` - the amount of custom currency granted by this gift event
+- `(currencygranted)` - the custom currency amount granted for this payment
 
 Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
 -------|-----------|----------
@@ -3567,7 +3609,7 @@ Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCur
 
 **Formulas:**
 
-- `(currencybal)` - the gifter's new balance, formatted with the custom currency name
+- `(currencybal)` - the payer's new formatted custom-currency balance
 
 Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
 -------|-----------|----------
@@ -3907,6 +3949,14 @@ Yes&nbsp;&nbsp; | Yes
 **Labels Used:** twitch noevent
 
 #### Hook: twitchMassSubscriptionGifted
+
+Global&nbsp;&nbsp; | Local
+-------|-------
+Yes&nbsp;&nbsp; | Yes
+
+**Labels Used:** twitch noevent
+
+#### Hook: twitchBits
 
 Global&nbsp;&nbsp; | Local
 -------|-------

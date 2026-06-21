@@ -18,17 +18,22 @@
 /*
  * giftSubCurrencyRewards.js
  *
- * Awards custom multi-currency balances to gift-sub gifters. Operators configure
- * per-currency breakpoints: the highest breakpoint <= the number of gifted subs
- * decides the amount granted for that currency.
+ * Awards custom currency for supported payment sources. Each source converts
+ * its native unit to EUR using an operator-configured constant. Each custom
+ * currency then evaluates its own EUR-to-currency arithmetic expression.
  */
 (function () {
     var SCRIPT = './custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js',
         SETTINGS = 'giftSubCurrencyRewards',
-        REWARDS = 'giftSubCurrencyRewardBreakpoints',
+        FORMULAS = 'giftSubCurrencyRewardFormulas',
         MASS_GIFT_SETTLEMENT_MS = 3000,
-        enabled = $.getSetIniDbBoolean(SETTINGS, 'enabled', true),
-        message = $.getSetIniDbString(SETTINGS, 'message', ''),
+        PAYMENT_SOURCES = {
+            'giftsub': {'label': 'Gift subs', 'unit': 'gift sub', 'setting': 'giftSubEurPerUnit', 'defaultRate': 1},
+            'bits': {'label': 'Bits', 'unit': 'Bit', 'setting': 'bitsEurPerUnit', 'defaultRate': 0.005}
+        },
+        enabled,
+        message,
+        sourceRates = {},
         pendingSingleGifts = {},
         pendingSingleGiftsLock = new Packages.java.util.concurrent.locks.ReentrantLock();
 
@@ -36,9 +41,25 @@
         return v === undefined || v === null || $.jsString(v).trim() === '';
     }
 
+    function positiveNumber(v, fallback) {
+        var n = parseFloat(v);
+        return isNaN(n) || !isFinite(n) || n <= 0 ? fallback : n;
+    }
+
+    function parsePositiveInt(v) {
+        var n = parseInt(v, 10);
+        return isNaN(n) || n <= 0 ? null : n;
+    }
+
     function reloadSettings() {
+        var source;
         enabled = $.getSetIniDbBoolean(SETTINGS, 'enabled', true);
         message = $.getSetIniDbString(SETTINGS, 'message', '');
+        for (source in PAYMENT_SOURCES) {
+            if (PAYMENT_SOURCES.hasOwnProperty(source)) {
+                sourceRates[source] = positiveNumber($.getSetIniDbFloat(SETTINGS, PAYMENT_SOURCES[source].setting, PAYMENT_SOURCES[source].defaultRate), PAYMENT_SOURCES[source].defaultRate);
+            }
+        }
     }
 
     function customCurrenciesReady() {
@@ -52,95 +73,124 @@
         return $.jsString(id).toLowerCase().replace(/[^a-z0-9_]/g, '');
     }
 
-    function parsePositiveInt(v) {
-        var n = parseInt(v, 10);
-        return isNaN(n) || n <= 0 ? null : n;
+    function getFormula(currencyId) {
+        currencyId = normalizeCurrencyId(currencyId);
+        return currencyId === '' ? '' : $.getIniDbString(FORMULAS, currencyId, '');
     }
 
-    function getRewardMap(currencyId) {
-        currencyId = normalizeCurrencyId(currencyId);
-        if (currencyId === '' || !$.inidb.exists(REWARDS, currencyId)) {
-            return {};
+    /*
+     * Evaluates a deliberately small expression language. The only variable is
+     * x (the EUR amount); operators are +, -, *, / and parentheses. Adjacent
+     * values multiply, so both "2*x + 1" and "2x + 1" are valid.
+     */
+    function evaluateFormula(formula, x) {
+        var input = $.jsString(formula),
+            index = 0,
+            length = input.length;
+
+        function skipWhitespace() {
+            while (index < length && /\s/.test(input.charAt(index))) {
+                index++;
+            }
+        }
+
+        function factorStarts() {
+            skipWhitespace();
+            return index < length && (input.charAt(index) === '(' || input.charAt(index) === 'x' || input.charAt(index) === 'X' || input.charAt(index) === '.' || /[0-9]/.test(input.charAt(index)));
+        }
+
+        function factor() {
+            var sign = 1,
+                start,
+                match,
+                value;
+
+            skipWhitespace();
+            while (input.charAt(index) === '+' || input.charAt(index) === '-') {
+                if (input.charAt(index) === '-') {
+                    sign *= -1;
+                }
+                index++;
+                skipWhitespace();
+            }
+
+            if (input.charAt(index) === '(') {
+                index++;
+                value = expression();
+                skipWhitespace();
+                if (input.charAt(index) !== ')') {
+                    throw 'Missing closing parenthesis';
+                }
+                index++;
+                return sign * value;
+            }
+
+            if (input.charAt(index) === 'x' || input.charAt(index) === 'X') {
+                index++;
+                return sign * x;
+            }
+
+            start = input.substring(index);
+            match = /^(?:\d+(?:\.\d*)?|\.\d+)/.exec(start);
+            if (match === null) {
+                throw 'Expected a number, x, or parenthesis';
+            }
+            index += match[0].length;
+            return sign * parseFloat(match[0]);
+        }
+
+        function term() {
+            var value = factor(),
+                operator;
+
+            while (true) {
+                skipWhitespace();
+                operator = input.charAt(index);
+                if (operator === '*' || operator === '/') {
+                    index++;
+                    var right = factor();
+                    if (operator === '/' && right === 0) {
+                        throw 'Division by zero';
+                    }
+                    value = operator === '*' ? value * right : value / right;
+                } else if (factorStarts()) {
+                    value *= factor();
+                } else {
+                    return value;
+                }
+            }
+        }
+
+        function expression() {
+            var value = term(),
+                operator;
+
+            while (true) {
+                skipWhitespace();
+                operator = input.charAt(index);
+                if (operator !== '+' && operator !== '-') {
+                    return value;
+                }
+                index++;
+                value = operator === '+' ? value + term() : value - term();
+            }
         }
 
         try {
-            var obj = JSON.parse($.getIniDbString(REWARDS, currencyId, '{}'));
-            return obj === null ? {} : obj;
+            if (input.trim() === '' || !isFinite(x)) {
+                return null;
+            }
+            var result = expression();
+            skipWhitespace();
+            return index === length && isFinite(result) ? result : null;
         } catch (ex) {
-            return {};
+            return null;
         }
     }
 
-    function saveRewardMap(currencyId, map) {
-        currencyId = normalizeCurrencyId(currencyId);
-        var hasAny = false,
-            k;
-
-        for (k in map) {
-            if (map.hasOwnProperty(k)) {
-                hasAny = true;
-                break;
-            }
-        }
-
-        if (hasAny) {
-            $.inidb.set(REWARDS, currencyId, JSON.stringify(map));
-        } else {
-            $.inidb.del(REWARDS, currencyId);
-        }
-    }
-
-    function setBreakpoint(currencyId, giftedSubs, currencyAmount) {
-        currencyId = normalizeCurrencyId(currencyId);
-        var map = getRewardMap(currencyId);
-        map[String(giftedSubs)] = currencyAmount;
-        saveRewardMap(currencyId, map);
-    }
-
-    function removeBreakpoint(currencyId, giftedSubs) {
-        currencyId = normalizeCurrencyId(currencyId);
-        var map = getRewardMap(currencyId),
-            key = String(giftedSubs);
-
-        if (!map.hasOwnProperty(key)) {
-            return false;
-        }
-
-        delete map[key];
-        saveRewardMap(currencyId, map);
-        return true;
-    }
-
-    function sortedBreakpoints(map) {
-        var out = [],
-            k;
-
-        for (k in map) {
-            if (map.hasOwnProperty(k) && parsePositiveInt(k) !== null && parsePositiveInt(map[k]) !== null) {
-                out.push(parseInt(k, 10));
-            }
-        }
-
-        out.sort(function (a, b) {
-            return a - b;
-        });
-        return out;
-    }
-
-    function rewardFor(currencyId, giftedSubs) {
-        var map = getRewardMap(currencyId),
-            points = sortedBreakpoints(map),
-            reward = 0;
-
-        for (var i = 0; i < points.length; i++) {
-            if (points[i] <= giftedSubs) {
-                reward = parseInt(map[String(points[i])], 10);
-            } else {
-                break;
-            }
-        }
-
-        return reward;
+    function rewardFor(currencyId, euroAmount) {
+        var result = evaluateFormula(getFormula(currencyId), euroAmount);
+        return result === null ? 0 : Math.floor(result);
     }
 
     function currencyName(currencyId, amount) {
@@ -148,111 +198,124 @@
         return formatted.replace(/^\s*-?\d+\s+/, '');
     }
 
-    function localTransformers(currencyId, giftedSubs, granted, balance) {
+    function localTransformers(currencyId, payment, granted, balance) {
         /*
          * @localtransformer name
-         * @formula (name) the user who gifted the subscription(s)
+         * @formula (name) the user who made the payment
          * @cached
          */
-        function name(args) {
-            return {result: args.event.getUsername(), cache: true};
-        }
-
-        /*
-         * @localtransformer giftedamount
-         * @formula (giftedamount) the number of subscriptions gifted by this gift event
-         * @cached
-         */
-        function giftedamount(args) {
-            return {result: String(giftedSubs), cache: true};
-        }
-
+        function name() { return {result: payment.donor, cache: true}; }
         /*
          * @localtransformer amount
-         * @formula (amount) the number of subscriptions gifted by this gift event
+         * @formula (amount) the number of source units paid
          * @cached
          */
-        function amount(args) {
-            return {result: String(giftedSubs), cache: true};
-        }
-
+        function amount() { return {result: String(payment.units), cache: true}; }
+        /*
+         * @localtransformer giftedamount
+         * @formula (giftedamount) compatibility alias for (amount)
+         * @cached
+         */
+        function giftedamount() { return {result: String(payment.units), cache: true}; }
+        /*
+         * @localtransformer source
+         * @formula (source) the payment source name
+         * @cached
+         */
+        function source() { return {result: PAYMENT_SOURCES[payment.source].label, cache: true}; }
+        /*
+         * @localtransformer unitamount
+         * @formula (unitamount) the number of source units paid
+         * @cached
+         */
+        function unitamount() { return {result: String(payment.units), cache: true}; }
+        /*
+         * @localtransformer euramount
+         * @formula (euramount) the payment value in EUR after the source conversion
+         * @cached
+         */
+        function euramount() { return {result: String(payment.euros), cache: true}; }
         /*
          * @localtransformer currencygranted
-         * @formula (currencygranted) the amount of custom currency granted by this gift event
+         * @formula (currencygranted) the custom currency amount granted for this payment
          * @cached
          */
-        function currencygranted(args) {
-            return {result: String(granted), cache: true};
-        }
-
+        function currencygranted() { return {result: String(granted), cache: true}; }
         /*
          * @localtransformer currencyname
          * @formula (currencyname) the custom currency name for the amount granted
          * @cached
          */
-        function currencyname(args) {
-            return {result: currencyName(currencyId, granted), cache: true};
-        }
-
+        function currencyname() { return {result: currencyName(currencyId, granted), cache: true}; }
         /*
          * @localtransformer currencybal
-         * @formula (currencybal) the gifter's new balance, formatted with the custom currency name
+         * @formula (currencybal) the payer's new formatted custom-currency balance
          * @cached
          */
-        function currencybal(args) {
-            return {result: $.jsString($.currencies.getString(currencyId, balance)), cache: true};
-        }
+        function currencybal() { return {result: $.jsString($.currencies.getString(currencyId, balance)), cache: true}; }
 
         return {
             'name': name,
-            'giftedamount': giftedamount,
             'amount': amount,
+            'giftedamount': giftedamount,
+            'source': source,
+            'unitamount': unitamount,
+            'euramount': euramount,
             'currencygranted': currencygranted,
             'currencyname': currencyname,
             'currencybal': currencybal
         };
     }
 
-    function processGift(event, giftedSubs) {
-        if (!enabled || !customCurrenciesReady()) {
+    function eurPerUnit(source) {
+        return sourceRates.hasOwnProperty(source) ? sourceRates[source] : null;
+    }
+
+    function processPayment(event, source, donor, units) {
+        if (!enabled || !customCurrenciesReady() || !PAYMENT_SOURCES.hasOwnProperty(source)) {
             return;
         }
 
-        giftedSubs = parsePositiveInt(giftedSubs);
-        if (giftedSubs === null) {
+        units = parsePositiveInt(units);
+        donor = $.jsString(donor).toLowerCase();
+        if (units === null || $.equalsIgnoreCase(donor, 'anonymous')) {
             return;
         }
 
-        var gifter = $.jsString(event.getUsername()).toLowerCase(),
-            ids = $.inidb.GetKeyList(REWARDS, '');
-
-        if ($.equalsIgnoreCase(gifter, 'anonymous')) {
+        var conversion = eurPerUnit(source),
+            payment,
+            ids,
+            i;
+        if (conversion === null) {
             return;
         }
 
-        for (var i in ids) {
-            var currencyId = normalizeCurrencyId(ids[i]);
+        payment = {'source': source, 'donor': donor, 'units': units, 'euros': units * conversion};
+        ids = $.inidb.GetKeyList(FORMULAS, '');
+        for (i in ids) {
+            var currencyId = normalizeCurrencyId(ids[i]),
+                granted,
+                balance,
+                out;
+
             if (currencyId === '' || !$.currencies.exists(currencyId)) {
                 continue;
             }
-
-            var granted = rewardFor(currencyId, giftedSubs);
+            granted = rewardFor(currencyId, payment.euros);
             if (granted <= 0) {
                 continue;
             }
 
-            var balance = $.currencies.give(gifter, currencyId, granted);
-            if (balance === null) {
+            balance = $.currencies.give(donor, currencyId, granted);
+            if (balance === null || blank(message)) {
                 continue;
             }
 
-            if (!blank(message)) {
-                var out = $.transformers.tags(event, $.jsString(message), ['twitch', 'noevent'], {
-                    localTransformers: localTransformers(currencyId, giftedSubs, granted, balance)
-                });
-                if (out !== null && $.jsString(out).trim() !== '') {
-                    $.say(out);
-                }
+            out = $.transformers.tags(event, $.jsString(message), ['twitch', 'noevent'], {
+                localTransformers: localTransformers(currencyId, payment, granted, balance)
+            });
+            if (out !== null && $.jsString(out).trim() !== '') {
+                $.say(out);
             }
         }
     }
@@ -262,18 +325,10 @@
     }
 
     function removePendingGift(gifter, pending) {
-        var gifts = pendingSingleGifts[gifter],
-            index;
-
-        if (gifts === undefined) {
+        var gifts = pendingSingleGifts[gifter], index;
+        if (gifts === undefined || (index = gifts.indexOf(pending)) === -1) {
             return false;
         }
-
-        index = gifts.indexOf(pending);
-        if (index === -1) {
-            return false;
-        }
-
         gifts.splice(index, 1);
         if (gifts.length === 0) {
             delete pendingSingleGifts[gifter];
@@ -281,19 +336,9 @@
         return true;
     }
 
-    /*
-     * Live Twitch delivery can publish the recipient subgift USERNOTICEs before
-     * the submysterygift USERNOTICE. The Java event's fromBulk flag cannot be
-     * set in that ordering, so hold individual rewards briefly for reconciliation
-     * with a following mass-gift event.
-     */
+    /* Hold individual gift events briefly so a following mass-gift can replace them. */
     function queueSingleGift(event) {
-        var gifter = gifterKey(event),
-            pending = {
-                'event': event,
-                'timer': null
-            };
-
+        var gifter = gifterKey(event), pending = {'event': event, 'timer': null};
         pendingSingleGiftsLock.lock();
         try {
             if (pendingSingleGifts[gifter] === undefined) {
@@ -302,16 +347,14 @@
             pendingSingleGifts[gifter].push(pending);
             pending.timer = setTimeout(function () {
                 var shouldProcess;
-
                 pendingSingleGiftsLock.lock();
                 try {
                     shouldProcess = removePendingGift(gifter, pending);
                 } finally {
                     pendingSingleGiftsLock.unlock();
                 }
-
                 if (shouldProcess) {
-                    processGift(event, 1);
+                    processPayment(event, 'giftsub', gifter, 1);
                 }
             }, MASS_GIFT_SETTLEMENT_MS, SCRIPT);
         } finally {
@@ -320,15 +363,10 @@
     }
 
     function processMassGift(event) {
-        var gifter = gifterKey(event),
-            amount = parsePositiveInt(event.getAmount()),
-            gifts,
-            pending = [];
-
+        var gifter = gifterKey(event), amount = parsePositiveInt(event.getAmount()), gifts, pending = [], i;
         if (amount === null) {
             return;
         }
-
         pendingSingleGiftsLock.lock();
         try {
             gifts = pendingSingleGifts[gifter];
@@ -341,35 +379,10 @@
         } finally {
             pendingSingleGiftsLock.unlock();
         }
-
-        for (var i = 0; i < pending.length; i++) {
+        for (i = 0; i < pending.length; i++) {
             clearTimeout(pending[i].timer);
         }
-        processGift(event, amount);
-    }
-
-    function listCurrency(currencyId) {
-        var map = getRewardMap(currencyId),
-            points = sortedBreakpoints(map),
-            parts = [];
-
-        for (var i = 0; i < points.length; i++) {
-            parts.push(points[i] + '=>' + map[String(points[i])]);
-        }
-
-        return parts.join(', ');
-    }
-
-    function allConfiguredCurrencies() {
-        var ids = $.inidb.GetKeyList(REWARDS, ''),
-            out = [];
-
-        for (var i in ids) {
-            out.push($.jsString(ids[i]));
-        }
-
-        out.sort();
-        return out;
+        processPayment(event, 'giftsub', gifter, amount);
     }
 
     /*
@@ -377,10 +390,9 @@
      * @usestransformers local global twitch noevent
      */
     $.bind('twitchSubscriptionGift', function (event) {
-        if (event.fromBulk()) {
-            return;
+        if (!event.fromBulk()) {
+            queueSingleGift(event);
         }
-        queueSingleGift(event);
     });
 
     /*
@@ -392,54 +404,49 @@
     });
 
     /*
-     * @event command
+     * @event twitchBits
+     * @usestransformers local global twitch noevent
      */
+    $.bind('twitchBits', function (event) {
+        processPayment(event, 'bits', event.getUsername(), event.getBits());
+    });
+
+    /* @event command */
     $.bind('command', function (event) {
         var sender = event.getSender(),
             command = $.jsString(event.getCommand()),
             args = event.getArgs(),
-            argsString = event.getArguments(),
-            action = args.length > 0 ? $.jsString(args[0]).toLowerCase() : 'list';
+            action = args.length === 0 ? 'list' : $.jsString(args[0]).toLowerCase(),
+            currencyId,
+            formula,
+            source,
+            rate,
+            ids,
+            parts,
+            i;
 
         if (!$.equalsIgnoreCase(command, 'giftcurrencyreward')) {
             return;
         }
 
-        if (!customCurrenciesReady()) {
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.missing.multicurrency'));
-            return;
-        }
-
         /*
-         * @commandpath giftcurrencyreward - List configured gift-sub custom-currency rewards
-         */
-        /*
-         * @commandpath giftcurrencyreward list (currencyId) - List configured gift-sub custom-currency rewards
+         * @commandpath giftcurrencyreward list - List configured payment custom-currency formulas
          */
         if (action === 'list') {
-            if (args.length > 1) {
-                var lId = normalizeCurrencyId(args[1]),
-                    list = listCurrency(lId);
-                $.say($.whisperPrefix(sender) + (list === '' ? $.lang.get('giftsubcurrencyrewards.list.empty', lId) : $.lang.get('giftsubcurrencyrewards.list.one', lId, list)));
-                return;
+            ids = $.inidb.GetKeyList(FORMULAS, '');
+            parts = [];
+            for (i in ids) {
+                currencyId = normalizeCurrencyId(ids[i]);
+                if (currencyId !== '') {
+                    parts.push(currencyId + ': ' + getFormula(currencyId));
+                }
             }
-
-            var ids = allConfiguredCurrencies();
-            if (ids.length === 0) {
-                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.list.none'));
-                return;
-            }
-
-            var parts = [];
-            for (var i = 0; i < ids.length; i++) {
-                parts.push(ids[i] + ': ' + listCurrency(ids[i]));
-            }
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.list.all', parts.join(' | ')));
+            $.say($.whisperPrefix(sender) + (parts.length === 0 ? $.lang.get('giftsubcurrencyrewards.list.none') : $.lang.get('giftsubcurrencyrewards.list.all', parts.join(' | '))));
             return;
         }
 
         /*
-         * @commandpath giftcurrencyreward toggle - Enable or disable gift-sub custom-currency rewards
+         * @commandpath giftcurrencyreward toggle - Enable or disable payment custom-currency rewards
          */
         if (action === 'toggle') {
             enabled = !enabled;
@@ -449,115 +456,79 @@
         }
 
         /*
-         * @commandpath giftcurrencyreward message [message] - Set the gift-sub custom-currency reward message
+         * @commandpath giftcurrencyreward source [giftsub|bits] [EUR per unit] - Set a source conversion rate
          */
-        if (action === 'message') {
-            if (args.length < 2) {
-                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.message.usage'));
+        if (action === 'source') {
+            source = args.length > 1 ? $.jsString(args[1]).toLowerCase() : '';
+            rate = args.length > 2 ? positiveNumber(args[2], null) : null;
+            if (!PAYMENT_SOURCES.hasOwnProperty(source) || rate === null) {
+                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.source.usage'));
                 return;
             }
-            message = $.parseArgs(argsString, ' ', 2, true)[1];
-            $.setIniDbString(SETTINGS, 'message', message);
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.message.set'));
+            $.setIniDbFloat(SETTINGS, PAYMENT_SOURCES[source].setting, rate);
+            reloadSettings();
+            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.source.set', PAYMENT_SOURCES[source].label, rate));
             return;
         }
 
         /*
-         * @commandpath giftcurrencyreward clearmsg - Clear the gift-sub custom-currency reward message
-         */
-        if (action === 'clearmsg') {
-            message = '';
-            $.setIniDbString(SETTINGS, 'message', message);
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.message.clear'));
-            return;
-        }
-
-        /*
-         * @commandpath giftcurrencyreward set [currencyId] [subsGifted] [currencyAmount] - Set a gift-sub reward breakpoint
+         * @commandpath giftcurrencyreward set [currencyId] [formula] - Set an EUR-to-currency formula
          */
         if (action === 'set') {
-            var sId = normalizeCurrencyId(args[1]),
-                sSubs = parsePositiveInt(args[2]),
-                sAmount = parsePositiveInt(args[3]);
-
-            if (sId === '' || sSubs === null || sAmount === null) {
+            currencyId = normalizeCurrencyId(args[1]);
+            formula = args.length > 2 ? args.slice(2).join(' ') : '';
+            if (currencyId === '' || evaluateFormula(formula, 1) === null) {
                 $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.set.usage'));
                 return;
             }
-            if (!$.currencies.exists(sId)) {
-                $.say($.whisperPrefix(sender) + $.lang.get('multicurrency.unknown', sId));
+            if (!customCurrenciesReady() || !$.currencies.exists(currencyId)) {
+                $.say($.whisperPrefix(sender) + $.lang.get('multicurrency.unknown', currencyId));
                 return;
             }
-
-            setBreakpoint(sId, sSubs, sAmount);
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.set.ok', sId, sSubs, sAmount));
+            $.setIniDbString(FORMULAS, currencyId, formula);
+            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.set.ok', currencyId, formula));
             return;
         }
 
         /*
-         * @commandpath giftcurrencyreward remove [currencyId] [subsGifted] - Remove a gift-sub reward breakpoint
+         * @commandpath giftcurrencyreward remove [currencyId] - Remove an EUR-to-currency formula
          */
         if (action === 'remove') {
-            var rId = normalizeCurrencyId(args[1]),
-                rSubs = parsePositiveInt(args[2]);
-
-            if (rId === '' || rSubs === null) {
-                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.usage'));
+            currencyId = normalizeCurrencyId(args[1]);
+            if (currencyId === '' || !$.inidb.exists(FORMULAS, currencyId)) {
+                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.missing', currencyId));
                 return;
             }
-            if (!removeBreakpoint(rId, rSubs)) {
-                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.missing', rId, rSubs));
-                return;
-            }
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.ok', rId, rSubs));
-            return;
-        }
-
-        /*
-         * @commandpath giftcurrencyreward clear [currencyId] - Remove all gift-sub reward breakpoints for one currency
-         */
-        if (action === 'clear') {
-            var cId = normalizeCurrencyId(args[1]);
-            if (cId === '') {
-                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.clear.usage'));
-                return;
-            }
-            $.inidb.del(REWARDS, cId);
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.clear.ok', cId));
+            $.inidb.del(FORMULAS, currencyId);
+            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.ok', currencyId));
             return;
         }
 
         $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.usage'));
     });
 
-    /*
-     * @event webPanelSocketUpdate
-     */
+    /* @event webPanelSocketUpdate */
     $.bind('webPanelSocketUpdate', function (event) {
         if ($.equalsIgnoreCase(event.getScript(), SCRIPT)) {
             reloadSettings();
         }
     });
 
-    /*
-     * @event initReady
-     */
+    /* @event initReady */
     $.bind('initReady', function () {
         reloadSettings();
         $.registerChatCommand(SCRIPT, 'giftcurrencyreward', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'list', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'toggle', $.PERMISSION.Admin);
-        $.registerChatSubcommand('giftcurrencyreward', 'message', $.PERMISSION.Admin);
-        $.registerChatSubcommand('giftcurrencyreward', 'clearmsg', $.PERMISSION.Admin);
+        $.registerChatSubcommand('giftcurrencyreward', 'source', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'set', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'remove', $.PERMISSION.Admin);
-        $.registerChatSubcommand('giftcurrencyreward', 'clear', $.PERMISSION.Admin);
     });
 
+    reloadSettings();
     $.giftSubCurrencyRewards = {
-        setBreakpoint: setBreakpoint,
-        removeBreakpoint: removeBreakpoint,
+        evaluateFormula: evaluateFormula,
         rewardFor: rewardFor,
-        processGift: processGift
+        processPayment: processPayment
     };
 })();

@@ -176,14 +176,11 @@ Parameters enclosed in parenthesis `( )` are optional when using the command
 | ./custom/multiCurrency/multiCurrencySystem.js | !currency add [currencyId] [name] [plural] | - Define a new currency |
 | ./custom/multiCurrency/multiCurrencySystem.js | !currency remove [currencyId] | - Delete a currency and all of its balances |
 | ./custom/queueCurrency/queueCurrencyBridge.js | !queueentry [your submission] | - Spend the configured currency to add an entry to the timed event queue (command name and cost are configurable on the panel) |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward | - List configured gift-sub custom-currency rewards |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward list (currencyId) | - List configured gift-sub custom-currency rewards |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward toggle | - Enable or disable gift-sub custom-currency rewards |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward message [message] | - Set the gift-sub custom-currency reward message |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward clearmsg | - Clear the gift-sub custom-currency reward message |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward set [currencyId] [subsGifted] [currencyAmount] | - Set a gift-sub reward breakpoint |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward remove [currencyId] [subsGifted] | - Remove a gift-sub reward breakpoint |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward clear [currencyId] | - Remove all gift-sub reward breakpoints for one currency |
+| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward list | - List configured payment custom-currency formulas |
+| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward toggle | - Enable or disable payment custom-currency rewards |
+| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward source [giftsub&#124;bits] [EUR per unit] | - Set a source conversion rate |
+| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward set [currencyId] [formula] | - Set an EUR-to-currency formula |
+| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward remove [currencyId] | - Remove an EUR-to-currency formula |
 | ./discord/core/accountLink.js | !account link [code] | - Completes an account link for Discord. |
 | ./games/8ball.js | !8ball [question] | - Ask the 8ball for advice |
 | ./games/adventureSystem.js | !adventure [amount] | - Start/join an adventure |

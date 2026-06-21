@@ -21,9 +21,9 @@ $(function () {
     var SECTION = 'extra',
         SCRIPT = './custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js',
         SETTINGS = 'giftSubCurrencyRewards',
-        REWARDS = 'giftSubCurrencyRewardBreakpoints',
+        FORMULAS = 'giftSubCurrencyRewardFormulas',
         currencyDefs = {},
-        rewardMaps = {};
+        formulas = {};
 
     function isWritable() {
         var ns = window.__pbCustomPanel__;
@@ -35,13 +35,6 @@ $(function () {
         return (ns && typeof ns.requirePanelSectionWrite === 'function') ? ns.requirePanelSectionWrite(SECTION) : true;
     }
 
-    function applyWritable() {
-        var w = isWritable();
-        $('#gscr-readonly-banner').toggle(!w);
-        $('#gscr-enabled, #gscr-message, #gscr-save-settings, #gscr-save-breakpoint, #gscr-clear-currency')
-            .prop('disabled', !w);
-    }
-
     function sanitizeId(raw) {
         return String(raw || '').toLowerCase().replace(/[^a-z0-9_]/g, '');
     }
@@ -49,358 +42,208 @@ $(function () {
     function parseDef(value) {
         try {
             var o = JSON.parse(value);
-            return { name: o.name || '', plural: o.plural || o.name || '' };
+            return {name: o.name || '', plural: o.plural || o.name || ''};
         } catch (e) {
-            return { name: String(value || ''), plural: String(value || '') };
+            return {name: String(value || ''), plural: String(value || '')};
         }
     }
 
-    function parseMap(value) {
+    function evaluateFormula(formula, x) {
+        var input = String(formula || ''), index = 0, length = input.length;
+        function skip() { while (index < length && /\s/.test(input.charAt(index))) { index++; } }
+        function startsFactor() {
+            skip();
+            return index < length && (input.charAt(index) === '(' || input.charAt(index).toLowerCase() === 'x' || input.charAt(index) === '.' || /[0-9]/.test(input.charAt(index)));
+        }
+        function factor() {
+            var sign = 1, match, value;
+            skip();
+            while (input.charAt(index) === '+' || input.charAt(index) === '-') {
+                if (input.charAt(index++) === '-') { sign *= -1; }
+                skip();
+            }
+            if (input.charAt(index) === '(') {
+                index++; value = expression(); skip();
+                if (input.charAt(index) !== ')') { throw 'parenthesis'; }
+                index++; return sign * value;
+            }
+            if (input.charAt(index).toLowerCase() === 'x') { index++; return sign * x; }
+            match = /^(?:\d+(?:\.\d*)?|\.\d+)/.exec(input.substring(index));
+            if (!match) { throw 'factor'; }
+            index += match[0].length;
+            return sign * parseFloat(match[0]);
+        }
+        function term() {
+            var value = factor(), op, right;
+            while (true) {
+                skip(); op = input.charAt(index);
+                if (op === '*' || op === '/') {
+                    index++; right = factor();
+                    if (op === '/' && right === 0) { throw 'zero'; }
+                    value = op === '*' ? value * right : value / right;
+                } else if (startsFactor()) { value *= factor(); } else { return value; }
+            }
+        }
+        function expression() {
+            var value = term(), op;
+            while (true) {
+                skip(); op = input.charAt(index);
+                if (op !== '+' && op !== '-') { return value; }
+                index++; value = op === '+' ? value + term() : value - term();
+            }
+        }
         try {
-            var o = JSON.parse(value);
-            return o === null ? {} : o;
-        } catch (e) {
-            return {};
-        }
+            if (input.trim() === '') { return null; }
+            var result = expression(); skip();
+            return index === length && isFinite(result) ? result : null;
+        } catch (e) { return null; }
     }
 
-    function sortedBreakpoints(map) {
-        var out = [];
-        for (var k in map) {
-            if (map.hasOwnProperty(k) && parseInt(k, 10) > 0 && parseInt(map[k], 10) > 0) {
-                out.push(parseInt(k, 10));
-            }
-        }
-        out.sort(function (a, b) {
-            return a - b;
-        });
-        return out;
-    }
-
-    function rewardFor(currencyId, giftedSubs) {
-        var map = rewardMaps[currencyId] || {},
-            points = sortedBreakpoints(map),
-            reward = 0;
-
-        for (var i = 0; i < points.length; i++) {
-            if (points[i] <= giftedSubs) {
-                reward = parseInt(map[String(points[i])], 10);
-            } else {
-                break;
-            }
-        }
-        return reward;
-    }
-
-    function currencyName(currencyId, amount) {
-        var def = currencyDefs[currencyId];
-        if (!def) {
-            return currencyId;
-        }
-        return parseInt(amount, 10) === 1 ? def.name : def.plural;
-    }
-
-    function currencyString(currencyId, amount) {
-        return String(amount) + ' ' + currencyName(currencyId, amount);
-    }
-
-    function saveMap(currencyId, map, callback) {
-        var hasAny = false;
-        for (var k in map) {
-            if (map.hasOwnProperty(k)) {
-                hasAny = true;
-                break;
-            }
-        }
-
-        if (hasAny) {
-            socket.updateDBValue('gscr_save_map', REWARDS, currencyId, JSON.stringify(map), callback);
-        } else {
-            socket.removeDBValue('gscr_remove_map', REWARDS, currencyId, callback);
-        }
+    function applyWritable() {
+        var writable = isWritable();
+        $('#gscr-readonly-banner').toggle(!writable);
+        $('#gscr-enabled, #gscr-message, #gscr-giftsub-eur, #gscr-bits-eur, #gscr-save-settings, #gscr-save-formula, #gscr-clear-formula').prop('disabled', !writable);
     }
 
     function loadCurrencies(selected) {
         socket.getDBTableValues('gscr_currency_defs', 'currencyDefs', function (results) {
-            var $currency = $('#gscr-currency').empty();
+            var $currency = $('#gscr-currency').empty(), i, id;
             currencyDefs = {};
-
-            for (var i = 0; i < results.length; i++) {
-                var id = sanitizeId(results[i].key);
+            for (i = 0; i < results.length; i++) {
+                id = sanitizeId(results[i].key);
                 currencyDefs[id] = parseDef(results[i].value);
-                $currency.append($('<option/>', {
-                    'value': id,
-                    'text': id + ' (' + currencyDefs[id].name + ')',
-                    'selected': String(selected) === id
-                }));
+                $currency.append($('<option/>', {value: id, text: id + ' (' + currencyDefs[id].name + ')', selected: String(selected) === id}));
             }
-
             $('#gscr-no-currencies').toggle(results.length === 0);
-            renderTable();
-            renderLadder();
+            renderFormulaTable();
             renderPreview();
         });
     }
 
-    function loadRewards(callback) {
-        socket.getDBTableValues('gscr_reward_maps', REWARDS, function (results) {
-            rewardMaps = {};
-            for (var i = 0; i < results.length; i++) {
-                rewardMaps[sanitizeId(results[i].key)] = parseMap(results[i].value);
+    function loadFormulas(callback) {
+        socket.getDBTableValues('gscr_formulas', FORMULAS, function (results) {
+            var i;
+            formulas = {};
+            for (i = 0; i < results.length; i++) {
+                formulas[sanitizeId(results[i].key)] = String(results[i].value || '');
             }
-            renderTable();
-            renderLadder();
+            renderFormulaTable();
             renderPreview();
-            if (typeof callback === 'function') {
-                callback();
-            }
+            if (typeof callback === 'function') { callback(); }
         });
     }
 
     function loadSettings() {
         socket.getDBValues('gscr_settings', {
-            tables: [SETTINGS, SETTINGS],
-            keys: ['enabled', 'message']
+            tables: [SETTINGS, SETTINGS, SETTINGS, SETTINGS],
+            keys: ['enabled', 'message', 'giftSubEurPerUnit', 'bitsEurPerUnit']
         }, true, function (e) {
             $('#gscr-enabled').prop('checked', e.enabled === null || e.enabled === undefined ? true : helpers.isTrue(e.enabled));
             $('#gscr-message').val(e.message === null || e.message === undefined ? '' : String(e.message));
+            $('#gscr-giftsub-eur').val(e.giftSubEurPerUnit === null || e.giftSubEurPerUnit === undefined ? 1 : e.giftSubEurPerUnit);
+            $('#gscr-bits-eur').val(e.bitsEurPerUnit === null || e.bitsEurPerUnit === undefined ? 0.005 : e.bitsEurPerUnit);
             renderPreview();
         });
     }
 
     function saveSettings() {
-        if (!canWrite()) {
-            return;
+        var giftSubRate = parseFloat($('#gscr-giftsub-eur').val()), bitsRate = parseFloat($('#gscr-bits-eur').val());
+        if (!canWrite()) { return; }
+        if (!isFinite(giftSubRate) || giftSubRate <= 0 || !isFinite(bitsRate) || bitsRate <= 0) {
+            toastr.error('EUR per unit must be greater than zero.'); return;
         }
-
         socket.updateDBValues('gscr_save_settings', {
-            tables: [SETTINGS, SETTINGS],
-            keys: ['enabled', 'message'],
-            values: [$('#gscr-enabled').is(':checked'), $('#gscr-message').val()]
+            tables: [SETTINGS, SETTINGS, SETTINGS, SETTINGS],
+            keys: ['enabled', 'message', 'giftSubEurPerUnit', 'bitsEurPerUnit'],
+            values: [$('#gscr-enabled').is(':checked'), $('#gscr-message').val(), giftSubRate, bitsRate]
         }, function () {
-            socket.wsEvent('gscr_reload', SCRIPT, null, ['reload'], function () {
-                toastr.success('Gift-sub reward message saved.');
-            });
+            socket.wsEvent('gscr_reload', SCRIPT, null, ['reload'], function () { toastr.success('Payment reward settings saved.'); });
         });
     }
 
-    function renderTable() {
-        var rows = [],
-            selected = String($('#gscr-currency').val() || ''),
-            currencies = Object.keys(rewardMaps).sort();
-
-        for (var i = 0; i < currencies.length; i++) {
-            var currencyId = currencies[i],
-                map = rewardMaps[currencyId] || {},
-                points = sortedBreakpoints(map);
-
-            if (selected !== '' && currencyId !== selected) {
-                continue;
-            }
-
-            for (var j = 0; j < points.length; j++) {
-                var subs = points[j],
-                    reward = parseInt(map[String(subs)], 10),
-                    next = points[j + 1],
-                    range = next === undefined ? subs + '+' : subs + '-' + (next - 1);
-
-                rows.push([
-                    currencyId,
-                    subs,
-                    reward,
-                    range,
-                    $('<div/>', { 'class': 'btn-group' })
-                        .append($('<button/>', {
-                            'type': 'button',
-                            'class': 'btn btn-xs btn-warning gscr-edit-breakpoint',
-                            'data-currency': currencyId,
-                            'data-subs': subs,
-                            'data-reward': reward,
-                            'html': $('<i/>', { 'class': 'fa fa-edit' })
-                        }))
-                        .append($('<button/>', {
-                            'type': 'button',
-                            'class': 'btn btn-xs btn-danger gscr-delete-breakpoint',
-                            'data-currency': currencyId,
-                            'data-subs': subs,
-                            'html': $('<i/>', { 'class': 'fa fa-trash' })
-                        })).html()
-                ]);
-            }
+    function renderFormulaTable() {
+        var rows = [], ids = Object.keys(formulas).sort(), i, id;
+        for (i = 0; i < ids.length; i++) {
+            id = ids[i];
+            rows.push([id, formulas[id], $('<div/>', {'class': 'btn-group'})
+                .append($('<button/>', {'type': 'button', 'class': 'btn btn-xs btn-warning gscr-edit-formula', 'data-currency': id, 'html': $('<i/>', {'class': 'fa fa-edit'})}))
+                .append($('<button/>', {'type': 'button', 'class': 'btn btn-xs btn-danger gscr-delete-formula', 'data-currency': id, 'html': $('<i/>', {'class': 'fa fa-trash'})})).html()]);
         }
-
         if ($.fn.DataTable.isDataTable('#giftSubCurrencyRewardsTable')) {
-            $('#giftSubCurrencyRewardsTable').DataTable().clear().rows.add(rows).invalidate().draw(false);
-            return;
+            $('#giftSubCurrencyRewardsTable').DataTable().clear().rows.add(rows).invalidate().draw(false); return;
         }
-
         var table = $('#giftSubCurrencyRewardsTable').DataTable({
-            'searching': false,
-            'autoWidth': false,
-            'data': rows,
-            'order': [[0, 'asc'], [1, 'asc']],
-            'columnDefs': [
-                { 'orderable': false, 'targets': [4] }
-            ],
-            'columns': [
-                { 'title': 'Currency' },
-                { 'title': 'Subs' },
-                { 'title': 'Reward' },
-                { 'title': 'Applies to' },
-                { 'title': 'Actions' }
-            ]
+            searching: false, autoWidth: false, data: rows, order: [[0, 'asc']],
+            columnDefs: [{orderable: false, targets: [2]}],
+            columns: [{title: 'Currency'}, {title: 'EUR → Currency formula'}, {title: 'Actions'}]
         });
-
-        table.on('click', '.gscr-edit-breakpoint', function () {
-            $('#gscr-currency').val($(this).data('currency'));
-            $('#gscr-subs').val($(this).data('subs'));
-            $('#gscr-reward').val($(this).data('reward'));
-            renderLadder();
-            renderPreview();
+        table.on('click', '.gscr-edit-formula', function () {
+            var id = $(this).data('currency');
+            $('#gscr-currency').val(id); $('#gscr-formula').val(formulas[id]); renderPreview();
         });
+        table.on('click', '.gscr-delete-formula', function () { clearFormula($(this).data('currency')); });
+    }
 
-        table.on('click', '.gscr-delete-breakpoint', function () {
-            removeBreakpoint($(this).data('currency'), parseInt($(this).data('subs'), 10));
+    function saveFormula() {
+        var currencyId = String($('#gscr-currency').val() || ''), formula = String($('#gscr-formula').val() || ''), test;
+        if (!canWrite()) { return; }
+        if (currencyId === '') { toastr.error('Select a currency.'); return; }
+        test = evaluateFormula(formula, 1);
+        if (test === null) { toastr.error('Formula is invalid. Use x, numbers, +, -, *, / and parentheses.'); return; }
+        socket.updateDBValue('gscr_save_formula', FORMULAS, currencyId, formula, function () {
+            toastr.success('Formula saved.'); loadFormulas();
         });
     }
 
-    function renderLadder() {
-        var currencyId = String($('#gscr-currency').val() || ''),
-            map = rewardMaps[currencyId] || {},
-            points = sortedBreakpoints(map),
-            $ladder = $('#gscr-ladder').empty(),
-            parts = [];
+    function clearFormula(currencyId) {
+        if (!canWrite()) { return; }
+        helpers.getConfirmDeleteModal('gscr_delete_formula', 'Remove the formula for ' + currencyId + '?', true, 'Formula removed.', function () {
+            socket.removeDBValue('gscr_remove_formula', FORMULAS, currencyId, function () { loadFormulas(); });
+        });
+    }
 
-        $('#gscr-ladder-empty').toggle(points.length === 0);
-        $ladder.toggle(points.length > 0);
+    function formatEuros(amount) { return Math.round(amount * 1000000) / 1000000; }
 
-        if (points.length === 0) {
-            $('#gscr-ladder-summary').text('');
-            return;
-        }
-
-        for (var i = 0; i < points.length; i++) {
-            var label = points[i] + '+ -> ' + map[String(points[i])],
-                width = 100 / points.length;
-            $ladder.append($('<div/>', {
-                'class': 'progress-bar progress-bar-success',
-                'style': 'width: ' + width + '%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;',
-                'text': label
-            }));
-            parts.push(points[i] + ' gifted sub(s) grants ' + currencyString(currencyId, map[String(points[i])]));
-        }
-
-        $('#gscr-ladder-summary').text(parts.join(' | '));
+    function currencyName(currencyId, amount) {
+        var def = currencyDefs[currencyId];
+        if (!def) { return currencyId; }
+        return amount === 1 ? def.name : def.plural;
     }
 
     function renderPreview() {
-        var msg = String($('#gscr-message').val() || $('#gscr-message').attr('placeholder') || ''),
-            user = String($('#gscr-preview-user').val() || 'User'),
-            gifted = parseInt($('#gscr-preview-subs').val(), 10),
-            currencyId = String($('#gscr-currency').val() || ''),
-            granted;
-
-        if (isNaN(gifted) || gifted <= 0) {
-            gifted = 1;
-        }
-
-        granted = currencyId === '' ? 0 : rewardFor(currencyId, gifted);
-        msg = msg.replace(/\(name\)/g, user)
-            .replace(/\(giftedamount\)/g, String(gifted))
-            .replace(/\(amount\)/g, String(gifted))
+        var source = String($('#gscr-preview-source').val() || 'giftsub'), units = parseInt($('#gscr-preview-units').val(), 10), rate,
+            euros, currencyId = String($('#gscr-currency').val() || ''), formula, granted, msg, user;
+        if (isNaN(units) || units <= 0) { units = 1; }
+        rate = parseFloat(source === 'bits' ? $('#gscr-bits-eur').val() : $('#gscr-giftsub-eur').val());
+        if (!isFinite(rate) || rate <= 0) { rate = 0; }
+        euros = formatEuros(units * rate);
+        formula = formulas[currencyId] || String($('#gscr-formula').val() || '');
+        granted = evaluateFormula(formula, euros);
+        granted = granted === null ? 0 : Math.max(0, Math.floor(granted));
+        user = String($('#gscr-preview-user').val() || 'User');
+        msg = String($('#gscr-message').val() || $('#gscr-message').attr('placeholder') || '')
+            .replace(/\(name\)/g, user).replace(/\(source\)/g, source === 'bits' ? 'Bits' : 'Gift subs')
+            .replace(/\(unitamount\)/g, String(units)).replace(/\(euramount\)/g, String(euros))
+            .replace(/\(amount\)/g, String(units)).replace(/\(giftedamount\)/g, String(units))
             .replace(/\(currencygranted\)/g, String(granted))
             .replace(/\(currencyname\)/g, currencyId === '' ? '' : currencyName(currencyId, granted))
-            .replace(/\(currencybal\)/g, currencyId === '' ? '' : currencyString(currencyId, granted));
-
+            .replace(/\(currencybal\)/g, currencyId === '' ? '' : String(granted) + ' ' + currencyName(currencyId, granted));
+        $('#gscr-preview-math').text(units + ' ' + (source === 'bits' ? 'Bits' : 'gift subs') + ' × ' + rate + ' = ' + euros + ' EUR; floor(' + (formula || 'no formula') + ') = ' + granted);
         $('#gscr-message-preview').text(msg);
     }
 
-    function saveBreakpoint() {
-        if (!canWrite()) {
-            return;
-        }
-        var currencyId = String($('#gscr-currency').val() || ''),
-            subs = parseInt($('#gscr-subs').val(), 10),
-            reward = parseInt($('#gscr-reward').val(), 10),
-            map;
-
-        if (currencyId === '') {
-            toastr.error('Select a currency.');
-            return;
-        }
-        if (!helpers.handleInputNumber($('#gscr-subs'), 1) || !helpers.handleInputNumber($('#gscr-reward'), 1)) {
-            return;
-        }
-
-        map = rewardMaps[currencyId] || {};
-        map[String(subs)] = reward;
-        saveMap(currencyId, map, function () {
-            toastr.success('Breakpoint saved.');
-            loadRewards();
-        });
-    }
-
-    function removeBreakpoint(currencyId, subs) {
-        if (!canWrite()) {
-            return;
-        }
-
-        helpers.getConfirmDeleteModal('gscr_delete_breakpoint', 'Remove the ' + subs + ' sub breakpoint for ' + currencyId + '?', true,
-            'Breakpoint removed.',
-            function () {
-                var map = rewardMaps[currencyId] || {};
-                delete map[String(subs)];
-                saveMap(currencyId, map, function () {
-                    loadRewards();
-                });
-            });
-    }
-
-    function clearCurrency() {
-        if (!canWrite()) {
-            return;
-        }
-        var currencyId = String($('#gscr-currency').val() || '');
-        if (currencyId === '') {
-            return;
-        }
-
-        helpers.getConfirmDeleteModal('gscr_clear_currency', 'Remove every gift-sub breakpoint for ' + currencyId + '?', true,
-            'Breakpoints cleared.',
-            function () {
-                socket.removeDBValue('gscr_clear_currency_do', REWARDS, currencyId, function () {
-                    loadRewards();
-                });
-            });
-    }
-
     function insertTag(tag) {
-        var el = $('#gscr-message').get(0),
-            value = $('#gscr-message').val(),
-            start = el.selectionStart || value.length,
-            end = el.selectionEnd || value.length;
-
+        var el = $('#gscr-message').get(0), value = $('#gscr-message').val(), start = el.selectionStart || value.length, end = el.selectionEnd || value.length;
         $('#gscr-message').val(value.substring(0, start) + tag + value.substring(end));
-        el.focus();
-        el.selectionStart = el.selectionEnd = start + tag.length;
-        renderPreview();
+        el.focus(); el.selectionStart = el.selectionEnd = start + tag.length; renderPreview();
     }
 
-    applyWritable();
-    loadSettings();
-    loadCurrencies();
-    loadRewards();
-
+    applyWritable(); loadSettings(); loadCurrencies(); loadFormulas();
     $('#gscr-save-settings').on('click', saveSettings);
-    $('#gscr-save-breakpoint').on('click', saveBreakpoint);
-    $('#gscr-clear-currency').on('click', clearCurrency);
-    $('#gscr-currency').on('change', function () {
-        renderTable();
-        renderLadder();
-        renderPreview();
-    });
-    $('#gscr-message, #gscr-preview-user, #gscr-preview-subs').on('input', renderPreview);
-    $('.gscr-tag').on('click', function () {
-        insertTag($(this).data('tag'));
-    });
+    $('#gscr-save-formula').on('click', saveFormula);
+    $('#gscr-clear-formula').on('click', function () { clearFormula(String($('#gscr-currency').val() || '')); });
+    $('#gscr-currency').on('change', function () { $('#gscr-formula').val(formulas[$(this).val()] || ''); renderPreview(); });
+    $('#gscr-message, #gscr-giftsub-eur, #gscr-bits-eur, #gscr-formula, #gscr-preview-user, #gscr-preview-units').on('input', renderPreview);
+    $('#gscr-preview-source').on('change', renderPreview);
+    $('.gscr-tag').on('click', function () { insertTag($(this).data('tag')); });
 });
