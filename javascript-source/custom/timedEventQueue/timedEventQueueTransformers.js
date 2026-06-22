@@ -213,12 +213,6 @@
         var pargs = $.parseArgs(args.args, ' ', 5, true),
             requester = $.jsString(args.event.getSender());
 
-        if (!$.checkUserPermission(requester, args.event.getTags(), $.PERMISSION.Mod)) {
-            $.returnCommandCost(requester, args.event.getCommand(), false);
-            $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagadd.permission'));
-            return {cancel: true, result: ''};
-        }
-
         if (pargs === null || pargs.length < 5 || isNaN(pargs[1]) || parseInt(pargs[1]) <= 0
                 || isNaN(pargs[3]) || parseInt(pargs[3]) <= 0) {
             $.say($.whisperPrefix(requester) + $.lang.get('timedeventqueue.tagaddcurrency.usage'));
