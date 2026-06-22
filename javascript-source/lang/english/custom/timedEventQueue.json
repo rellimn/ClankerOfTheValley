@@ -28,6 +28,8 @@
     "timedeventqueue.accepting.status": "Accepting submissions: $1",
     "timedeventqueue.accepting.on": "ON",
     "timedeventqueue.accepting.off": "OFF",
+    "timedeventqueue.accepting.announce.on": "Redeems are now open.",
+    "timedeventqueue.accepting.announce.off": "Redeems are now closed.",
     "timedeventqueue.pause.success": "Paused.",
     "timedeventqueue.pause.fail": "Nothing to pause.",
     "timedeventqueue.resume.success": "Resumed.",

@@ -677,6 +677,7 @@
         } finally {
             _redeemableSyncLock.unlock();
         }
+        $.say("/announce " + (value ? $.lang.get("timedeventqueue.accepting.announce.on") : $.lang.get("timedeventqueue.accepting.announce.off")))
     }
 
     /*
