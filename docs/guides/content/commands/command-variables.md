@@ -3593,20 +3593,6 @@ No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
 
 &nbsp;
 
-#### euramount
-
-Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_
-
-**Formulas:**
-
-- `(euramount)` - the payment value in EUR after the source conversion
-
-Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
--------|-----------|----------
-No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
-
-&nbsp;
-
 #### currencygranted
 
 Defined in script: _./javascript-source/custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js_

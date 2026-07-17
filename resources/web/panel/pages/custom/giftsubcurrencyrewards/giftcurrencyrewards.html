@@ -36,14 +36,6 @@
                     <div class="box-body">
                         <div class="form-group"><label><input type="checkbox" id="gscr-enabled"> Enabled</label></div>
                         <div class="form-group">
-                            <label for="gscr-giftsub-eur">Gift sub → EUR</label>
-                            <input type="number" class="form-control" id="gscr-giftsub-eur" min="0.000001" step="any" value="1">
-                        </div>
-                        <div class="form-group">
-                            <label for="gscr-bits-eur">Bit → EUR</label>
-                            <input type="number" class="form-control" id="gscr-bits-eur" min="0.000001" step="any" value="0.005">
-                        </div>
-                        <div class="form-group">
                             <label for="gscr-message">Chat message</label>
                             <textarea class="form-control" id="gscr-message" rows="5" placeholder="Thank you (name) for your (source) payment. You have been given (currencygranted) (currencyname). Balance: (currencybal)"></textarea>
                         </div>
@@ -53,7 +45,6 @@
                                 <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(name)">(name)</button>
                                 <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(source)">(source)</button>
                                 <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(unitamount)">(unitamount)</button>
-                                <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(euramount)">(euramount)</button>
                                 <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(currencygranted)">(currencygranted)</button>
                                 <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(currencyname)">(currencyname)</button>
                                 <button type="button" class="btn btn-default btn-xs gscr-tag" data-tag="(currencybal)">(currencybal)</button>
@@ -68,7 +59,7 @@
                     <div class="box-body">
                         <div class="row">
                             <div class="col-sm-6"><div class="form-group"><label for="gscr-preview-user">Donor</label><input type="text" class="form-control" id="gscr-preview-user" value="User"></div></div>
-                            <div class="col-sm-6"><div class="form-group"><label for="gscr-preview-source">Source</label><select class="form-control" id="gscr-preview-source"><option value="giftsub">Gift subs</option><option value="bits">Bits</option><option value="streamelements">StreamElements (EUR only)</option></select></div></div>
+                            <div class="col-sm-6"><div class="form-group"><label for="gscr-preview-source">Source</label><select class="form-control" id="gscr-preview-source"><option value="giftsub">Gift subs</option><option value="bits">Bits</option><option value="streamelements">StreamElements</option></select></div></div>
                         </div>
                         <div class="form-group"><label for="gscr-preview-units">Units</label><input type="number" class="form-control" id="gscr-preview-units" value="5" min="1"></div>
                         <p class="text-muted" id="gscr-preview-math"></p>
@@ -79,12 +70,13 @@
 
             <div class="col-md-7">
                 <div class="box box-success">
-                    <div class="box-header with-border"><h3 class="box-title">EUR → Currency formulas</h3></div>
+                    <div class="box-header with-border"><h3 class="box-title">Source → Currency formulas</h3></div>
                     <div class="box-body">
-                        <p class="text-muted">Use <code>x</code> for the EUR amount. Supported operators: <code>+ - * /</code> and parentheses. <code>2x + 1</code> and <code>2 * x + 1</code> are equivalent. Final rewards are always floored.</p>
+                        <p class="text-muted">Use <code>x</code> for the raw source amount (gift subs, Bits, or the reported StreamElements donation amount). Supported operators: <code>+ - * /</code> and parentheses. <code>2x + 1</code> and <code>2 * x + 1</code> are equivalent. Final rewards are always floored.</p>
                         <div class="row">
-                            <div class="col-sm-4"><div class="form-group"><label for="gscr-currency">Currency</label><select class="form-control" id="gscr-currency"></select></div></div>
-                            <div class="col-sm-6"><div class="form-group"><label for="gscr-formula">Formula</label><input type="text" class="form-control" id="gscr-formula" placeholder="2x + 1"></div></div>
+                            <div class="col-sm-3"><div class="form-group"><label for="gscr-formula-source">Source</label><select class="form-control" id="gscr-formula-source"><option value="giftsub">Gift subs</option><option value="bits">Bits</option><option value="streamelements">StreamElements</option></select></div></div>
+                            <div class="col-sm-3"><div class="form-group"><label for="gscr-currency">Currency</label><select class="form-control" id="gscr-currency"></select></div></div>
+                            <div class="col-sm-4"><div class="form-group"><label for="gscr-formula">Formula</label><input type="text" class="form-control" id="gscr-formula" placeholder="2x + 1"></div></div>
                             <div class="col-sm-2"><label>&nbsp;</label><button type="button" class="btn btn-success btn-block" id="gscr-save-formula"><i class="fa fa-save"></i></button></div>
                         </div>
                         <div class="form-group"><button type="button" class="btn btn-default btn-sm" id="gscr-clear-formula"><i class="fa fa-eraser"></i> Clear selected formula</button></div>

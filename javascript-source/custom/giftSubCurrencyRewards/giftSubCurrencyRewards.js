@@ -18,9 +18,9 @@
 /*
  * giftSubCurrencyRewards.js
  *
- * Awards custom currency for supported payment sources. Each source converts
- * its native unit to EUR using an operator-configured constant. Each custom
- * currency then evaluates its own EUR-to-currency arithmetic expression.
+ * Awards custom currency for supported payment sources. Every source and
+ * custom-currency pair has its own formula, evaluated directly against the
+ * source amount without an intermediate fiat-currency conversion.
  */
 (function () {
     var SCRIPT = './custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js',
@@ -29,13 +29,12 @@
         PROCESSED_PAYMENTS = 'giftSubCurrencyRewardPayments',
         MASS_GIFT_SETTLEMENT_MS = 3000,
         PAYMENT_SOURCES = {
-            'giftsub': {'label': 'Gift Subs', 'unit': 'gift sub', 'setting': 'giftSubEurPerUnit', 'defaultRate': 1},
-            'bits': {'label': 'Bits', 'unit': 'Bit', 'setting': 'bitsEurPerUnit', 'defaultRate': 0.005},
-            'streamelements': {'label': '€ via StreamElements', 'unit': 'EUR', 'defaultRate': 1}
+            'giftsub': {'label': 'Gift Subs', 'unit': 'gift sub'},
+            'bits': {'label': 'Bits', 'unit': 'Bit'},
+            'streamelements': {'label': 'StreamElements', 'unit': 'donation unit'}
         },
         enabled,
         message,
-        sourceRates = {},
         pendingSingleGifts = {},
         pendingSingleGiftsLock = new Packages.java.util.concurrent.locks.ReentrantLock(),
         processedPaymentsLock = new Packages.java.util.concurrent.locks.ReentrantLock();
@@ -59,16 +58,8 @@
     }
 
     function reloadSettings() {
-        var source;
         enabled = $.getSetIniDbBoolean(SETTINGS, 'enabled', true);
         message = $.getSetIniDbString(SETTINGS, 'message', '');
-        for (source in PAYMENT_SOURCES) {
-            if (PAYMENT_SOURCES.hasOwnProperty(source)) {
-                sourceRates[source] = PAYMENT_SOURCES[source].setting === undefined
-                    ? PAYMENT_SOURCES[source].defaultRate
-                    : positiveNumber($.getSetIniDbFloat(SETTINGS, PAYMENT_SOURCES[source].setting, PAYMENT_SOURCES[source].defaultRate), PAYMENT_SOURCES[source].defaultRate);
-            }
-        }
     }
 
     function customCurrenciesReady() {
@@ -82,14 +73,25 @@
         return $.jsString(id).toLowerCase().replace(/[^a-z0-9_]/g, '');
     }
 
-    function getFormula(currencyId) {
+    function normalizeSource(source) {
+        source = blank(source) ? '' : $.jsString(source).toLowerCase();
+        return PAYMENT_SOURCES.hasOwnProperty(source) ? source : '';
+    }
+
+    function formulaKey(source, currencyId) {
+        source = normalizeSource(source);
         currencyId = normalizeCurrencyId(currencyId);
-        return currencyId === '' ? '' : $.getIniDbString(FORMULAS, currencyId, '');
+        return source === '' || currencyId === '' ? '' : source + ':' + currencyId;
+    }
+
+    function getFormula(source, currencyId) {
+        var key = formulaKey(source, currencyId);
+        return key === '' ? '' : $.getIniDbString(FORMULAS, key, '');
     }
 
     /*
      * Evaluates a deliberately small expression language. The only variable is
-     * x (the EUR amount); operators are +, -, *, / and parentheses. Adjacent
+     * x (the source amount); operators are +, -, *, / and parentheses. Adjacent
      * values multiply, so both "2*x + 1" and "2x + 1" are valid.
      */
     function evaluateFormula(formula, x) {
@@ -197,9 +199,14 @@
         }
     }
 
-    function rewardFor(currencyId, euroAmount) {
-        var result = evaluateFormula(getFormula(currencyId), euroAmount);
-        return result === null ? 0 : Math.floor(result);
+    function floorReward(value) {
+        var tolerance = Math.max(1, Math.abs(value)) * 1e-12;
+        return Math.floor(value + tolerance);
+    }
+
+    function rewardFor(source, currencyId, sourceAmount) {
+        var result = evaluateFormula(getFormula(source, currencyId), sourceAmount);
+        return result === null ? 0 : floorReward(result);
     }
 
     function currencyName(currencyId, amount) {
@@ -239,12 +246,6 @@
          */
         function unitamount() { return {result: String(payment.units), cache: true}; }
         /*
-         * @localtransformer euramount
-         * @formula (euramount) the payment value in EUR after the source conversion
-         * @cached
-         */
-        function euramount() { return {result: String(payment.euros), cache: true}; }
-        /*
          * @localtransformer currencygranted
          * @formula (currencygranted) the custom currency amount granted for this payment
          * @cached
@@ -269,15 +270,10 @@
             'giftedamount': giftedamount,
             'source': source,
             'unitamount': unitamount,
-            'euramount': euramount,
             'currencygranted': currencygranted,
             'currencyname': currencyname,
             'currencybal': currencybal
         };
-    }
-
-    function eurPerUnit(source) {
-        return sourceRates.hasOwnProperty(source) ? sourceRates[source] : null;
     }
 
     function processPayment(event, source, donor, units) {
@@ -291,18 +287,11 @@
             return;
         }
 
-        var conversion = eurPerUnit(source),
-            payment,
-            ids,
+        var payment = {'source': source, 'donor': donor, 'units': units},
+            currencies = $.currencies.list(),
             i;
-        if (conversion === null) {
-            return;
-        }
-
-        payment = {'source': source, 'donor': donor, 'units': units, 'euros': units * conversion};
-        ids = $.inidb.GetKeyList(FORMULAS, '');
-        for (i in ids) {
-            var currencyId = normalizeCurrencyId(ids[i]),
+        for (i = 0; i < currencies.length; i++) {
+            var currencyId = normalizeCurrencyId(currencies[i].id),
                 granted,
                 balance,
                 out;
@@ -310,7 +299,7 @@
             if (currencyId === '' || !$.currencies.exists(currencyId)) {
                 continue;
             }
-            granted = rewardFor(currencyId, payment.euros);
+            granted = rewardFor(source, currencyId, units);
             if (granted <= 0) {
                 continue;
             }
@@ -421,9 +410,8 @@
     });
 
     /*
-     * StreamElements sends its donation amount in the reported currency. This
-     * adapter intentionally accepts EUR only; no exchange-rate conversion is
-     * performed for other currencies.
+     * StreamElements formulas receive the donation amount exactly as reported.
+     * No fiat exchange-rate conversion is performed.
      *
      * @event streamElementsDonation
      * @usestransformers local global twitch noevent
@@ -437,7 +425,7 @@
         try {
             data = JSON.parse(event.getJsonString());
             donation = data.donation;
-            if (donation === undefined || donation.user === undefined || blank(donation.user.username) || String(donation.currency).toUpperCase() !== 'EUR' || parsePositiveAmount(donation.amount) === null) {
+            if (donation === undefined || donation.user === undefined || blank(donation.user.username) || parsePositiveAmount(donation.amount) === null) {
                 return;
             }
             donationId = String(data._id);
@@ -472,7 +460,7 @@
             currencyId,
             formula,
             source,
-            rate,
+            key,
             ids,
             parts,
             i;
@@ -488,9 +476,9 @@
             ids = $.inidb.GetKeyList(FORMULAS, '');
             parts = [];
             for (i in ids) {
-                currencyId = normalizeCurrencyId(ids[i]);
-                if (currencyId !== '') {
-                    parts.push(currencyId + ': ' + getFormula(currencyId));
+                key = $.jsString(ids[i]).toLowerCase();
+                if (/^(giftsub|bits|streamelements):[a-z0-9_]+$/.test(key)) {
+                    parts.push(key + ': ' + $.getIniDbString(FORMULAS, key, ''));
                 }
             }
             $.say($.whisperPrefix(sender) + (parts.length === 0 ? $.lang.get('giftsubcurrencyrewards.list.none') : $.lang.get('giftsubcurrencyrewards.list.all', parts.join(' | '))));
@@ -508,28 +496,13 @@
         }
 
         /*
-         * @commandpath giftcurrencyreward source [giftsub|bits] [EUR per unit] - Set a source conversion rate
-         */
-        if (action === 'source') {
-            source = args.length > 1 ? $.jsString(args[1]).toLowerCase() : '';
-            rate = args.length > 2 ? positiveNumber(args[2], null) : null;
-            if (!PAYMENT_SOURCES.hasOwnProperty(source) || PAYMENT_SOURCES[source].setting === undefined || rate === null) {
-                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.source.usage'));
-                return;
-            }
-            $.setIniDbFloat(SETTINGS, PAYMENT_SOURCES[source].setting, rate);
-            reloadSettings();
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.source.set', PAYMENT_SOURCES[source].label, rate));
-            return;
-        }
-
-        /*
-         * @commandpath giftcurrencyreward set [currencyId] [formula] - Set an EUR-to-currency formula
+         * @commandpath giftcurrencyreward set [giftsub|bits|streamelements] [currencyId] [formula] - Set a direct source-to-currency formula
          */
         if (action === 'set') {
-            currencyId = normalizeCurrencyId(args[1]);
-            formula = args.length > 2 ? args.slice(2).join(' ') : '';
-            if (currencyId === '' || evaluateFormula(formula, 1) === null) {
+            source = normalizeSource(args[1]);
+            currencyId = normalizeCurrencyId(args[2]);
+            formula = args.length > 3 ? args.slice(3).join(' ') : '';
+            if (source === '' || currencyId === '' || evaluateFormula(formula, 1) === null) {
                 $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.set.usage'));
                 return;
             }
@@ -537,22 +510,24 @@
                 $.say($.whisperPrefix(sender) + $.lang.get('multicurrency.unknown', currencyId));
                 return;
             }
-            $.setIniDbString(FORMULAS, currencyId, formula);
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.set.ok', currencyId, formula));
+            $.setIniDbString(FORMULAS, formulaKey(source, currencyId), formula);
+            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.set.ok', source, currencyId, formula));
             return;
         }
 
         /*
-         * @commandpath giftcurrencyreward remove [currencyId] - Remove an EUR-to-currency formula
+         * @commandpath giftcurrencyreward remove [giftsub|bits|streamelements] [currencyId] - Remove a direct source-to-currency formula
          */
         if (action === 'remove') {
-            currencyId = normalizeCurrencyId(args[1]);
-            if (currencyId === '' || !$.inidb.exists(FORMULAS, currencyId)) {
-                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.missing', currencyId));
+            source = normalizeSource(args[1]);
+            currencyId = normalizeCurrencyId(args[2]);
+            key = formulaKey(source, currencyId);
+            if (key === '' || !$.inidb.exists(FORMULAS, key)) {
+                $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.missing', source, currencyId));
                 return;
             }
-            $.inidb.del(FORMULAS, currencyId);
-            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.ok', currencyId));
+            $.inidb.del(FORMULAS, key);
+            $.say($.whisperPrefix(sender) + $.lang.get('giftsubcurrencyrewards.remove.ok', source, currencyId));
             return;
         }
 
@@ -572,7 +547,6 @@
         $.registerChatCommand(SCRIPT, 'giftcurrencyreward', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'list', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'toggle', $.PERMISSION.Admin);
-        $.registerChatSubcommand('giftcurrencyreward', 'source', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'set', $.PERMISSION.Admin);
         $.registerChatSubcommand('giftcurrencyreward', 'remove', $.PERMISSION.Admin);
     });
