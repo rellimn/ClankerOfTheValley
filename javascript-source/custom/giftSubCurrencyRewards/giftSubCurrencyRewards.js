@@ -31,7 +31,7 @@
         PAYMENT_SOURCES = {
             'giftsub': {'label': 'Gift Subs', 'unit': 'gift sub'},
             'bits': {'label': 'Bits', 'unit': 'Bit'},
-            'streamelements': {'label': 'StreamElements', 'unit': 'donation unit'}
+            'streamelements': {'label': '€ via StreamElements', 'unit': '€'}
         },
         enabled,
         message,
