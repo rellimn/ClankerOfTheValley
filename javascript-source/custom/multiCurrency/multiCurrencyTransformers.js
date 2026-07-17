@@ -171,6 +171,50 @@
     }
 
     /*
+     * @transformer currencyleaderboard
+     * @formula (currencyleaderboard id:str) the top 5 users for a currency, with medal emojis for the top 3
+     * @formula (currencyleaderboard id:str amount:int) the requested number of top users (maximum 15)
+     * @formula (currencyleaderboard id:str amount:int separator:str firstEmoji:str secondEmoji:str thirdEmoji:str) customize the separator and top-3 markers
+     * @labels twitch noevent currency
+     * @notes Quote arguments that contain spaces. Use an empty quoted string to hide a medal marker.
+     * @example Caster: !addcom !goldtop Gold leaders: (currencyleaderboard gold)
+     * @example Caster: !addcom !gemtop (currencyleaderboard gems 5 " | " "👑" "⭐" "✨")
+     * @cached
+     */
+    function currencyleaderboard(args) {
+        var pargs = $.parseArgs(args.args, ' ');
+        if (pargs === null || pargs.length === 0) {
+            return {result: '', cache: true};
+        }
+
+        var id = pargs[0].toLowerCase(),
+            amount = (pargs[1] === undefined ? 5 : parseInt(pargs[1], 10)),
+            separator = (pargs[2] === undefined ? ', ' : $.jsString(pargs[2])),
+            medals = [
+                pargs[3] === undefined ? '🥇' : $.jsString(pargs[3]),
+                pargs[4] === undefined ? '🥈' : $.jsString(pargs[4]),
+                pargs[5] === undefined ? '🥉' : $.jsString(pargs[5])
+            ],
+            leaders,
+            result = [],
+            i,
+            marker;
+
+        if (!$.currencies.exists(id) || isNaN(amount) || amount < 1) {
+            return {result: '', cache: true};
+        }
+        amount = Math.min(amount, 15);
+        leaders = $.currencies.leaderboard(id, amount);
+
+        for (i = 0; i < leaders.length; i++) {
+            marker = i < medals.length ? medals[i] : (i + 1) + '.';
+            result.push((marker === '' ? '' : marker + ' ') + leaders[i].username + ': ' +
+                $.jsString($.currencies.getString(id, leaders[i].value)));
+        }
+
+        return {result: result.join(separator), cache: true};
+    }
+    /*
      * @transformer addcurrency
      * @formula (addcurrency id:str amount:int) give the sender an amount of a currency
      * @formula (addcurrency id:str amount:int user:str) give the given user an amount of a currency
@@ -283,6 +327,7 @@
         new $.transformers.transformer('currencylist', ['twitch', 'noevent', 'currency'], currencylist),
         new $.transformers.transformer('currencyexists', ['twitch', 'noevent', 'currency'], currencyexists),
         new $.transformers.transformer('currencyprice', ['twitch', 'commandevent', 'currency'], currencyprice),
+        new $.transformers.transformer('currencyleaderboard', ['twitch', 'noevent', 'currency'], currencyleaderboard),
         new $.transformers.transformer('addcurrency', ['twitch', 'commandevent', 'currency'], addcurrency),
         new $.transformers.transformer('takecurrency', ['twitch', 'commandevent', 'currency'], takecurrency),
         new $.transformers.transformer('takecurrencyorcancel', ['twitch', 'commandevent', 'currency'], takecurrencyorcancel),

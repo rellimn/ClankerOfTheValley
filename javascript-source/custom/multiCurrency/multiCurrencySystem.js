@@ -218,6 +218,29 @@
         $.setIniDbNumber(balTable(id), $.jsString(username).toLowerCase(), parseInt(amount, 10));
     }
 
+    function getLeaderboard(id, amount) {
+        id = $.jsString(id).toLowerCase();
+        amount = parseInt(amount, 10);
+        if (!currencyExists(id) || isNaN(amount) || amount < 1) {
+            return [];
+        }
+
+        var list = [],
+            keys = $.inidb.GetKeysByNumberOrderValue(balTable(id), '', 'DESC', amount + 2, 0),
+            i,
+            username;
+
+        for (i in keys) {
+            username = $.jsString(keys[i]);
+            if (!$.isBot(username) && !$.isOwner(username)) {
+                list.push({username: username, value: getBalance(username, id)});
+                if (list.length === amount) {
+                    break;
+                }
+            }
+        }
+        return list;
+    }
     /*
      * Affordability check + debit in one call. Returns true if the user could pay (and was
      * charged) or the amount was non-positive; false if they could not afford it or the
@@ -506,6 +529,7 @@
         give: giveCurrency,
         take: takeCurrency,
         set: setBalance,
+        leaderboard: getLeaderboard,
         getString: getCurrencyString,
         charge: chargeCurrency,
         priceOf: priceOf

@@ -2315,6 +2315,38 @@ No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
 
 &nbsp;
 
+#### currencyleaderboard
+
+Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
+
+**Formulas:**
+
+- `(currencyleaderboard id:str)` - the top 5 users for a currency, with medal emojis for the top 3
+- `(currencyleaderboard id:str amount:int)` - the requested number of top users (maximum 15)
+- `(currencyleaderboard id:str amount:int separator:str firstEmoji:str secondEmoji:str thirdEmoji:str)` - customize the separator and top-3 markers
+
+**Labels:** twitch noevent currency
+
+
+_NOTE: Quote arguments that contain spaces. Use an empty quoted string to hide a medal marker._
+
+
+**Example:**
+```text
+Caster: !addcom !goldtop Gold leaders: (currencyleaderboard gold)
+```
+
+**Example:**
+```text
+Caster: !addcom !gemtop (currencyleaderboard gems 5 " | " "👑" "⭐" "✨")
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
 #### currencylist
 
 Defined in script: _./javascript-source/custom/multiCurrency/multiCurrencyTransformers.js_
