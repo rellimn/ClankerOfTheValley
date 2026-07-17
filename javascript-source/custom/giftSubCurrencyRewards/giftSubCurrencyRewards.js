@@ -29,17 +29,19 @@
         PROCESSED_PAYMENTS = 'giftSubCurrencyRewardPayments',
         MASS_GIFT_SETTLEMENT_MS = 3000,
         PAYMENT_SOURCES = {
-            'giftsub': {'label': 'Tier 1 Gift Subs', 'unit': 'gift sub'},
-            'giftsub2': {'label': 'Tier 2 Gift Subs', 'unit': 'gift sub'},
-            'giftsub3': {'label': 'Tier 3 Gift Subs', 'unit': 'gift sub'},
-            'sub1': {'label': 'Tier 1 Subs', 'unit': 'subscription'},
-            'sub2': {'label': 'Tier 2 Subs', 'unit': 'subscription'},
-            'sub3': {'label': 'Tier 3 Subs', 'unit': 'subscription'},
-            'resub1': {'label': 'Tier 1 Resubs', 'unit': 'resubscription'},
-            'resub2': {'label': 'Tier 2 Resubs', 'unit': 'resubscription'},
-            'resub3': {'label': 'Tier 3 Resubs', 'unit': 'resubscription'},
-            'bits': {'label': 'Bits', 'unit': 'Bit'},
-            'streamelements': {'label': '€ via StreamElements', 'unit': '€'}
+            'giftsub': {'label': 'Tier 1 gift subs', 'singular': 'Tier 1 gift sub'},
+            'giftsub2': {'label': 'Tier 2 gift subs', 'singular': 'Tier 2 gift sub'},
+            'giftsub3': {'label': 'Tier 3 gift subs', 'singular': 'Tier 3 gift sub'},
+            'sub1': {'label': 'Tier 1 personal subs', 'singular': 'Tier 1 personal sub'},
+            'sub2': {'label': 'Tier 2 personal subs', 'singular': 'Tier 2 personal sub'},
+            'sub3': {'label': 'Tier 3 personal subs', 'singular': 'Tier 3 personal sub'},
+            'subprime': {'label': 'Prime personal subs', 'singular': 'Prime personal sub'},
+            'resub1': {'label': 'Tier 1 personal resubs', 'singular': 'Tier 1 personal resub'},
+            'resub2': {'label': 'Tier 2 personal resubs', 'singular': 'Tier 2 personal resub'},
+            'resub3': {'label': 'Tier 3 personal resubs', 'singular': 'Tier 3 personal resub'},
+            'resubprime': {'label': 'Prime personal resubs', 'singular': 'Prime personal resub'},
+            'bits': {'label': 'Bits', 'singular': 'Bit'},
+            'streamelements': {'label': '€ via StreamElements', 'singular': '€ via StreamElements'}
         },
         enabled,
         message,
@@ -270,7 +272,11 @@
          * @formula (source) the payment source name
          * @cached
          */
-        function source() { return {result: PAYMENT_SOURCES[payment.source].label, cache: true}; }
+        function source() {
+            var definition = PAYMENT_SOURCES[payment.source],
+                label = parseFloat(payment.units) === 1 ? definition.singular : definition.label;
+            return {result: label, cache: true};
+        }
         /*
          * @localtransformer unitamount
          * @formula (unitamount) the number of source units paid
@@ -458,6 +464,16 @@
     });
 
     /*
+     * @event twitchPrimeSubscriber
+     * @usestransformers local global twitch noevent
+     */
+    $.bind('twitchPrimeSubscriber', function (event) {
+        var months = parseInt(event.getMonths(), 10),
+            source = !isNaN(months) && months > 1 ? 'resubprime' : 'subprime';
+        processPayment(event, source, event.getSubscriber(), 1);
+    });
+
+    /*
      * @event twitchReSubscriber
      * @usestransformers local global twitch noevent
      */
@@ -544,7 +560,7 @@
             parts = [];
             for (i in ids) {
                 key = $.jsString(ids[i]).toLowerCase();
-                if (/^(giftsub[23]?|sub[123]|resub[123]|bits|streamelements):[a-z0-9_]+$/.test(key)) {
+                if (/^(giftsub[23]?|sub(?:[123]|prime)|resub(?:[123]|prime)|bits|streamelements):[a-z0-9_]+$/.test(key)) {
                     parts.push(key + ': ' + $.getIniDbString(FORMULAS, key, ''));
                 }
             }
@@ -563,7 +579,7 @@
         }
 
         /*
-         * @commandpath giftcurrencyreward set [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|resub1|resub2|resub3|bits|streamelements] [currencyId] [formula] - Set a direct source-to-currency formula
+         * @commandpath giftcurrencyreward set [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|subprime|resub1|resub2|resub3|resubprime|bits|streamelements] [currencyId] [formula] - Set a direct source-to-currency formula
          */
         if (action === 'set') {
             source = normalizeSource(args[1]);
@@ -583,7 +599,7 @@
         }
 
         /*
-         * @commandpath giftcurrencyreward remove [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|resub1|resub2|resub3|bits|streamelements] [currencyId] - Remove a direct source-to-currency formula
+         * @commandpath giftcurrencyreward remove [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|subprime|resub1|resub2|resub3|resubprime|bits|streamelements] [currencyId] - Remove a direct source-to-currency formula
          */
         if (action === 'remove') {
             source = normalizeSource(args[1]);

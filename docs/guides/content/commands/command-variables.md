@@ -3982,6 +3982,14 @@ Yes&nbsp;&nbsp; | Yes
 
 **Labels Used:** twitch noevent
 
+#### Hook: twitchPrimeSubscriber
+
+Global&nbsp;&nbsp; | Local
+-------|-------
+Yes&nbsp;&nbsp; | Yes
+
+**Labels Used:** twitch noevent
+
 #### Hook: twitchReSubscriber
 
 Global&nbsp;&nbsp; | Local

@@ -23,10 +23,19 @@ $(function () {
         SETTINGS = 'giftSubCurrencyRewards',
         FORMULAS = 'giftSubCurrencyRewardFormulas',
         SOURCE_LABELS = {
-            giftsub: 'Tier 1 Gift Subs', giftsub2: 'Tier 2 Gift Subs', giftsub3: 'Tier 3 Gift Subs',
-            sub1: 'Tier 1 Subs', sub2: 'Tier 2 Subs', sub3: 'Tier 3 Subs',
-            resub1: 'Tier 1 Resubs', resub2: 'Tier 2 Resubs', resub3: 'Tier 3 Resubs',
-            bits: 'Bits', streamelements: 'StreamElements'
+            giftsub: ['Tier 1 gift sub', 'Tier 1 gift subs'],
+            giftsub2: ['Tier 2 gift sub', 'Tier 2 gift subs'],
+            giftsub3: ['Tier 3 gift sub', 'Tier 3 gift subs'],
+            sub1: ['Tier 1 personal sub', 'Tier 1 personal subs'],
+            sub2: ['Tier 2 personal sub', 'Tier 2 personal subs'],
+            sub3: ['Tier 3 personal sub', 'Tier 3 personal subs'],
+            subprime: ['Prime personal sub', 'Prime personal subs'],
+            resub1: ['Tier 1 personal resub', 'Tier 1 personal resubs'],
+            resub2: ['Tier 2 personal resub', 'Tier 2 personal resubs'],
+            resub3: ['Tier 3 personal resub', 'Tier 3 personal resubs'],
+            resubprime: ['Prime personal resub', 'Prime personal resubs'],
+            bits: ['Bit', 'Bits'],
+            streamelements: ['€ via StreamElements', '€ via StreamElements']
         },
         currencyDefs = {},
         formulas = {};
@@ -131,7 +140,7 @@ $(function () {
             var i;
             formulas = {};
             for (i = 0; i < results.length; i++) {
-                if (/^(giftsub[23]?|sub[123]|resub[123]|bits|streamelements):[a-z0-9_]+$/.test(String(results[i].key).toLowerCase())) {
+                if (/^(giftsub[23]?|sub(?:[123]|prime)|resub(?:[123]|prime)|bits|streamelements):[a-z0-9_]+$/.test(String(results[i].key).toLowerCase())) {
                     formulas[String(results[i].key).toLowerCase()] = String(results[i].value || '');
                 }
             }
@@ -256,7 +265,7 @@ $(function () {
         user = String($('#gscr-preview-user').val() || 'User');
         msg = String($('#gscr-message').val() || $('#gscr-message').attr('placeholder') || '')
             .replace(/\(name\)/g, user)
-            .replace(/\(source\)/g, SOURCE_LABELS[source] || source)
+            .replace(/\(source\)/g, SOURCE_LABELS[source] ? SOURCE_LABELS[source][units === 1 ? 0 : 1] : source)
             .replace(/\(unitamount\)/g, String(units))
             .replace(/\(amount\)/g, String(units))
             .replace(/\(giftedamount\)/g, String(units))
