@@ -1,10 +1,10 @@
 {
-    "giftsubcurrencyrewards.usage": "Usage: !giftcurrencyreward list | toggle | set [giftsub|bits|streamelements] [currencyId] [formula] | remove [giftsub|bits|streamelements] [currencyId]",
+    "giftsubcurrencyrewards.usage": "Usage: !giftcurrencyreward list | toggle | set [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|resub1|resub2|resub3|bits|streamelements] [currencyId] [formula] | remove [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|resub1|resub2|resub3|bits|streamelements] [currencyId]",
     "giftsubcurrencyrewards.list.none": "No payment custom-currency formulas have been configured.",
     "giftsubcurrencyrewards.list.all": "Payment custom-currency formulas: $1.",
     "giftsubcurrencyrewards.toggle.on": "Payment custom-currency rewards are enabled.",
     "giftsubcurrencyrewards.toggle.off": "Payment custom-currency rewards are disabled.",
-    "giftsubcurrencyrewards.set.usage": "Usage: !giftcurrencyreward set [giftsub|bits|streamelements] [currencyId] [formula]. x is the raw source amount; operators: +, -, *, /, and parentheses.",
+    "giftsubcurrencyrewards.set.usage": "Usage: !giftcurrencyreward set [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|resub1|resub2|resub3|bits|streamelements] [currencyId] [formula]. x is the raw source amount; operators: +, -, *, /, and parentheses.",
     "giftsubcurrencyrewards.set.ok": "Direct $1 reward formula set for $2: $3.",
     "giftsubcurrencyrewards.remove.missing": "No $1 reward formula exists for '$2'.",
     "giftsubcurrencyrewards.remove.ok": "$1 reward formula removed for '$2'."

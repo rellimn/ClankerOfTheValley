@@ -178,8 +178,8 @@ Parameters enclosed in parenthesis `( )` are optional when using the command
 | ./custom/queueCurrency/queueCurrencyBridge.js | !queueentry [your submission] | - Spend the configured currency to add an entry to the timed event queue (command name and cost are configurable on the panel) |
 | ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward list | - List configured payment custom-currency formulas |
 | ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward toggle | - Enable or disable payment custom-currency rewards |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward set [giftsub&#124;bits&#124;streamelements] [currencyId] [formula] | - Set a direct source-to-currency formula |
-| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward remove [giftsub&#124;bits&#124;streamelements] [currencyId] | - Remove a direct source-to-currency formula |
+| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward set [giftsub&#124;giftsub2&#124;giftsub3&#124;sub1&#124;sub2&#124;sub3&#124;resub1&#124;resub2&#124;resub3&#124;bits&#124;streamelements] [currencyId] [formula] | - Set a direct source-to-currency formula |
+| ./custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js | !giftcurrencyreward remove [giftsub&#124;giftsub2&#124;giftsub3&#124;sub1&#124;sub2&#124;sub3&#124;resub1&#124;resub2&#124;resub3&#124;bits&#124;streamelements] [currencyId] | - Remove a direct source-to-currency formula |
 | ./custom/utils/testRedeem.js | !testredeem reward-id user [user input] | - Emits a synthetic Channel Points redemption for a configured reward and user |
 | ./discord/core/accountLink.js | !account link [code] | - Completes an account link for Discord. |
 | ./games/8ball.js | !8ball [question] | - Ask the 8ball for advice |

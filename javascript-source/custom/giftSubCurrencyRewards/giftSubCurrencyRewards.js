@@ -29,7 +29,15 @@
         PROCESSED_PAYMENTS = 'giftSubCurrencyRewardPayments',
         MASS_GIFT_SETTLEMENT_MS = 3000,
         PAYMENT_SOURCES = {
-            'giftsub': {'label': 'Gift Subs', 'unit': 'gift sub'},
+            'giftsub': {'label': 'Tier 1 Gift Subs', 'unit': 'gift sub'},
+            'giftsub2': {'label': 'Tier 2 Gift Subs', 'unit': 'gift sub'},
+            'giftsub3': {'label': 'Tier 3 Gift Subs', 'unit': 'gift sub'},
+            'sub1': {'label': 'Tier 1 Subs', 'unit': 'subscription'},
+            'sub2': {'label': 'Tier 2 Subs', 'unit': 'subscription'},
+            'sub3': {'label': 'Tier 3 Subs', 'unit': 'subscription'},
+            'resub1': {'label': 'Tier 1 Resubs', 'unit': 'resubscription'},
+            'resub2': {'label': 'Tier 2 Resubs', 'unit': 'resubscription'},
+            'resub3': {'label': 'Tier 3 Resubs', 'unit': 'resubscription'},
             'bits': {'label': 'Bits', 'unit': 'Bit'},
             'streamelements': {'label': '€ via StreamElements', 'unit': '€'}
         },
@@ -76,6 +84,30 @@
     function normalizeSource(source) {
         source = blank(source) ? '' : $.jsString(source).toLowerCase();
         return PAYMENT_SOURCES.hasOwnProperty(source) ? source : '';
+    }
+
+    function subscriptionTier(plan) {
+        plan = blank(plan) ? '' : $.jsString(plan).toLowerCase();
+        if (plan === '1000') {
+            return '1';
+        }
+        if (plan === '2000') {
+            return '2';
+        }
+        if (plan === '3000') {
+            return '3';
+        }
+        return '';
+    }
+
+    function giftSource(plan) {
+        var tier = subscriptionTier(plan);
+        return tier === '' ? '' : (tier === '1' ? 'giftsub' : 'giftsub' + tier);
+    }
+
+    function personalSubSource(plan, resub) {
+        var tier = subscriptionTier(plan);
+        return tier === '' ? '' : (resub ? 'resub' : 'sub') + tier;
     }
 
     function formulaKey(source, currencyId) {
@@ -318,8 +350,8 @@
         }
     }
 
-    function gifterKey(event) {
-        return $.jsString(event.getUsername()).toLowerCase();
+    function gifterKey(event, source) {
+        return $.jsString(event.getUsername()).toLowerCase() + ':' + source;
     }
 
     function removePendingGift(gifter, pending) {
@@ -336,7 +368,14 @@
 
     /* Hold individual gift events briefly so a following mass-gift can replace them. */
     function queueSingleGift(event) {
-        var gifter = gifterKey(event), pending = {'event': event, 'timer': null};
+        var source = giftSource(event.getPlan()),
+            gifter,
+            pending;
+        if (source === '') {
+            return;
+        }
+        gifter = gifterKey(event, source);
+        pending = {'event': event, 'timer': null};
         pendingSingleGiftsLock.lock();
         try {
             if (pendingSingleGifts[gifter] === undefined) {
@@ -352,7 +391,7 @@
                     pendingSingleGiftsLock.unlock();
                 }
                 if (shouldProcess) {
-                    processPayment(event, 'giftsub', gifter, 1);
+                    processPayment(event, source, event.getUsername(), 1);
                 }
             }, MASS_GIFT_SETTLEMENT_MS, SCRIPT);
         } finally {
@@ -361,10 +400,16 @@
     }
 
     function processMassGift(event) {
-        var gifter = gifterKey(event), amount = parsePositiveInt(event.getAmount()), gifts, pending = [], i;
-        if (amount === null) {
+        var source = giftSource(event.getPlan()),
+            gifter,
+            amount = parsePositiveInt(event.getAmount()),
+            gifts,
+            pending = [],
+            i;
+        if (source === '' || amount === null) {
             return;
         }
+        gifter = gifterKey(event, source);
         pendingSingleGiftsLock.lock();
         try {
             gifts = pendingSingleGifts[gifter];
@@ -380,7 +425,7 @@
         for (i = 0; i < pending.length; i++) {
             clearTimeout(pending[i].timer);
         }
-        processPayment(event, 'giftsub', gifter, amount);
+        processPayment(event, source, event.getUsername(), amount);
     }
 
     /*
@@ -399,6 +444,28 @@
      */
     $.bind('twitchMassSubscriptionGifted', function (event) {
         processMassGift(event);
+    });
+
+    /*
+     * @event twitchSubscriber
+     * @usestransformers local global twitch noevent
+     */
+    $.bind('twitchSubscriber', function (event) {
+        var source = personalSubSource(event.getPlan(), false);
+        if (source !== '') {
+            processPayment(event, source, event.getSubscriber(), 1);
+        }
+    });
+
+    /*
+     * @event twitchReSubscriber
+     * @usestransformers local global twitch noevent
+     */
+    $.bind('twitchReSubscriber', function (event) {
+        var source = personalSubSource(event.getPlan(), true);
+        if (source !== '') {
+            processPayment(event, source, event.getSubscriber(), 1);
+        }
     });
 
     /*
@@ -477,7 +544,7 @@
             parts = [];
             for (i in ids) {
                 key = $.jsString(ids[i]).toLowerCase();
-                if (/^(giftsub|bits|streamelements):[a-z0-9_]+$/.test(key)) {
+                if (/^(giftsub[23]?|sub[123]|resub[123]|bits|streamelements):[a-z0-9_]+$/.test(key)) {
                     parts.push(key + ': ' + $.getIniDbString(FORMULAS, key, ''));
                 }
             }
@@ -496,7 +563,7 @@
         }
 
         /*
-         * @commandpath giftcurrencyreward set [giftsub|bits|streamelements] [currencyId] [formula] - Set a direct source-to-currency formula
+         * @commandpath giftcurrencyreward set [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|resub1|resub2|resub3|bits|streamelements] [currencyId] [formula] - Set a direct source-to-currency formula
          */
         if (action === 'set') {
             source = normalizeSource(args[1]);
@@ -516,7 +583,7 @@
         }
 
         /*
-         * @commandpath giftcurrencyreward remove [giftsub|bits|streamelements] [currencyId] - Remove a direct source-to-currency formula
+         * @commandpath giftcurrencyreward remove [giftsub|giftsub2|giftsub3|sub1|sub2|sub3|resub1|resub2|resub3|bits|streamelements] [currencyId] - Remove a direct source-to-currency formula
          */
         if (action === 'remove') {
             source = normalizeSource(args[1]);

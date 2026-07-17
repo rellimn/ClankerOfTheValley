@@ -22,6 +22,12 @@ $(function () {
         SCRIPT = './custom/giftSubCurrencyRewards/giftSubCurrencyRewards.js',
         SETTINGS = 'giftSubCurrencyRewards',
         FORMULAS = 'giftSubCurrencyRewardFormulas',
+        SOURCE_LABELS = {
+            giftsub: 'Tier 1 Gift Subs', giftsub2: 'Tier 2 Gift Subs', giftsub3: 'Tier 3 Gift Subs',
+            sub1: 'Tier 1 Subs', sub2: 'Tier 2 Subs', sub3: 'Tier 3 Subs',
+            resub1: 'Tier 1 Resubs', resub2: 'Tier 2 Resubs', resub3: 'Tier 3 Resubs',
+            bits: 'Bits', streamelements: 'StreamElements'
+        },
         currencyDefs = {},
         formulas = {};
 
@@ -125,7 +131,7 @@ $(function () {
             var i;
             formulas = {};
             for (i = 0; i < results.length; i++) {
-                if (/^(giftsub|bits|streamelements):[a-z0-9_]+$/.test(String(results[i].key).toLowerCase())) {
+                if (/^(giftsub[23]?|sub[123]|resub[123]|bits|streamelements):[a-z0-9_]+$/.test(String(results[i].key).toLowerCase())) {
                     formulas[String(results[i].key).toLowerCase()] = String(results[i].value || '');
                 }
             }
@@ -250,7 +256,7 @@ $(function () {
         user = String($('#gscr-preview-user').val() || 'User');
         msg = String($('#gscr-message').val() || $('#gscr-message').attr('placeholder') || '')
             .replace(/\(name\)/g, user)
-            .replace(/\(source\)/g, source === 'bits' ? 'Bits' : source === 'streamelements' ? 'StreamElements' : 'Gift Subs')
+            .replace(/\(source\)/g, SOURCE_LABELS[source] || source)
             .replace(/\(unitamount\)/g, String(units))
             .replace(/\(amount\)/g, String(units))
             .replace(/\(giftedamount\)/g, String(units))
@@ -272,7 +278,9 @@ $(function () {
     $('#gscr-save-formula').on('click', saveFormula);
     $('#gscr-clear-formula').on('click', function () { clearFormula(String($('#gscr-formula-source').val() || ''), String($('#gscr-currency').val() || '')); });
     $('#gscr-currency, #gscr-formula-source').on('change', function () {
-        $('#gscr-formula').val(formulas[String($('#gscr-formula-source').val()) + ':' + String($('#gscr-currency').val())] || '');
+        var source = String($('#gscr-formula-source').val());
+        $('#gscr-formula').val(formulas[source + ':' + String($('#gscr-currency').val())] || '');
+        $('#gscr-preview-source').val(source);
         renderPreview();
     });
     $('#gscr-message, #gscr-formula, #gscr-preview-user, #gscr-preview-units').on('input', renderPreview);

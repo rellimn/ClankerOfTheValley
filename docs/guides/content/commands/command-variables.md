@@ -3974,6 +3974,22 @@ Yes&nbsp;&nbsp; | Yes
 
 **Labels Used:** twitch noevent
 
+#### Hook: twitchSubscriber
+
+Global&nbsp;&nbsp; | Local
+-------|-------
+Yes&nbsp;&nbsp; | Yes
+
+**Labels Used:** twitch noevent
+
+#### Hook: twitchReSubscriber
+
+Global&nbsp;&nbsp; | Local
+-------|-------
+Yes&nbsp;&nbsp; | Yes
+
+**Labels Used:** twitch noevent
+
 #### Hook: twitchBits
 
 Global&nbsp;&nbsp; | Local
