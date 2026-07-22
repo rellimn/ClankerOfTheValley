@@ -1094,6 +1094,56 @@ No&nbsp;&nbsp; | No&nbsp;&nbsp; | No
 
 &nbsp;
 
+#### jnz
+
+Defined in script: _./javascript-source/core/transformers/commands.js_
+
+**Formulas:**
+
+- `(jnz value:number|command:str)` - executes the command and cancels the current command if the value is nonzero
+
+**Labels:** twitch discord commandevent commands
+
+
+_NOTE: The command may include arguments. When the jump is not taken, processing continues with the next command tag._
+
+
+**Example:**
+```text
+Caster: !addcom !state (jnz (count 0 registerA)|statenonzero)(command statezero)
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
+#### jz
+
+Defined in script: _./javascript-source/core/transformers/commands.js_
+
+**Formulas:**
+
+- `(jz value:number|command:str)` - executes the command and cancels the current command if the value is zero
+
+**Labels:** twitch discord commandevent commands
+
+
+_NOTE: The command may include arguments. When the jump is not taken, processing continues with the next command tag._
+
+
+**Example:**
+```text
+Caster: !addcom !state (jz (count 0 registerA)|statezero)(count -1 registerA)(command statenonzero)
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | Sometimes
+
+&nbsp;
+
 #### twitchcommand
 
 Defined in script: _./javascript-source/core/transformers/commands.js_

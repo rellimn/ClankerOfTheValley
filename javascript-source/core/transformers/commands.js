@@ -223,6 +223,64 @@
     }
 
     /*
+     * @function conditionalJump
+     * @param {object} args transformer arguments
+     * @param {boolean} jumpOnZero jump when the tested value is zero when true, or nonzero when false
+     * @returns {object} transformer result
+     */
+    function conditionalJump(args, jumpOnZero) {
+        let separator = args.args.indexOf('|');
+        if (separator < 0) {
+            $.consoleDebug('Invalid (' + args.tag + ') transformer: missing command separator');
+            return {result: ''};
+        }
+
+        let valueString = args.args.substring(0, separator).trim(),
+                target = args.args.substring(separator + 1).trim();
+
+        if (valueString.length === 0 || target.length === 0 || isNaN(valueString)) {
+            $.consoleDebug('Invalid (' + args.tag + ') transformer arguments');
+            return {result: ''};
+        }
+
+        let isZero = Number(valueString) === 0;
+        if (isZero === jumpOnZero) {
+            command({
+                event: args.event,
+                args: target,
+                platform: args.platform
+            });
+            return {cancel: true};
+        }
+
+        return {result: ''};
+    }
+
+    /*
+     * @transformer jz
+     * @formula (jz value:number|command:str) executes the command and cancels the current command if the value is zero
+     * @labels twitch discord commandevent commands
+     * @notes The command may include arguments. When the jump is not taken, processing continues with the next command tag.
+     * @example Caster: !addcom !state (jz (count 0 registerA)|statezero)(count -1 registerA)(command statenonzero)
+     * @cancels sometimes
+     */
+    function jz(args) {
+        return conditionalJump(args, true);
+    }
+
+    /*
+     * @transformer jnz
+     * @formula (jnz value:number|command:str) executes the command and cancels the current command if the value is nonzero
+     * @labels twitch discord commandevent commands
+     * @notes The command may include arguments. When the jump is not taken, processing continues with the next command tag.
+     * @example Caster: !addcom !state (jnz (count 0 registerA)|statenonzero)(command statezero)
+     * @cancels sometimes
+     */
+    function jnz(args) {
+        return conditionalJump(args, false);
+    }
+
+    /*
      * @transformer twitchcommand
      * @formula (twitchcommand name:str) explicitly execute a command on Twitch chat, including when triggering from Discord, with given name and pass no args
      * @formula (twitchcommand name:str args:str) explicitly execute a command on Twitch chat, including when triggering from Discord, with given name and pass args
@@ -271,6 +329,8 @@
         new $.transformers.transformer('delaycommand', ['twitch', 'discord', 'commandevent', 'commands'], delaycommand),
         new $.transformers.transformer('discordcommand', ['twitch', 'discord', 'commandevent', 'commands'], discordcommand),
         new $.transformers.transformer('help', ['twitch', 'discord', 'commandevent', 'commands'], help),
+        new $.transformers.transformer('jz', ['twitch', 'discord', 'commandevent', 'commands'], jz),
+        new $.transformers.transformer('jnz', ['twitch', 'discord', 'commandevent', 'commands'], jnz),
         new $.transformers.transformer('twitchcommand', ['twitch', 'discord', 'commandevent', 'commands'], twitchcommand)
     ];
 
