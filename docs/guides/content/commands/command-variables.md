@@ -1027,6 +1027,10 @@ Defined in script: _./javascript-source/core/transformers/commands.js_
 - `(count amount:int)` - increases the count of how often this command has been called by the specified amount and outputs new count
 - `(count amount:int name:str)` - increases the count of how often the named counter has been called by the specified amount and outputs new count
 - `(count reset name:str)` - zeroes the named counter and outputs new count
+- `(count!)` - increases the count of how often this command has been called without outputting the new count
+- `(count! amount:int)` - increases the count of how often this command has been called by the specified amount without outputting the new count
+- `(count! amount:int name:str)` - increases the named counter by the specified amount without outputting the new count
+- `(count! reset name:str)` - zeroes the named counter without outputting the new count
 
 **Labels:** twitch discord noevent commandevent commands
 

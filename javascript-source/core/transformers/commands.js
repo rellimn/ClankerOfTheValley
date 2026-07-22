@@ -78,6 +78,10 @@
      * @formula (count amount:int) increases the count of how often this command has been called by the specified amount and outputs new count
      * @formula (count amount:int name:str) increases the count of how often the named counter has been called by the specified amount and outputs new count
      * @formula (count reset name:str) zeroes the named counter and outputs new count
+     * @formula (count!) increases the count of how often this command has been called without outputting the new count
+     * @formula (count! amount:int) increases the count of how often this command has been called by the specified amount without outputting the new count
+     * @formula (count! amount:int name:str) increases the named counter by the specified amount without outputting the new count
+     * @formula (count! reset name:str) zeroes the named counter without outputting the new count
      * @labels twitch discord noevent commandevent commands
      * @example Caster: !addcom !spam Chat has been spammed (count) times
      * User: !spam
@@ -114,7 +118,7 @@
         }
 
         $.inidb.incr(table, counter, incr);
-        return {result: $.getIniDbString(table, counter)};
+        return {result: args.argsep.includes('!') ? '' : $.getIniDbString(table, counter)};
     }
 
     /*
