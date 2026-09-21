@@ -312,6 +312,7 @@
         if (ok) {
             fire(cb, view);
         }
+        triggerActiveUpdateFile()
         return ok;
     }
 
@@ -348,6 +349,7 @@
         }
         if (ok) {
             fire(cb, view);
+            triggerActiveUpdateFile()
         }
         return ok;
     }
@@ -388,6 +390,7 @@
         }
         if (ok) {
             fire(cb, view);
+            triggerActiveUpdateFile()
         }
         return ok;
     }
@@ -418,6 +421,7 @@
         } finally {
             _lock.unlock();
         }
+        triggerActiveUpdateFile()
         return ok;
     }
 
@@ -551,6 +555,7 @@
         } finally {
             _lock.unlock();
         }
+        triggerActiveUpdateFile()
     }
 
     /*
@@ -589,6 +594,7 @@
         } finally {
             _lock.unlock();
         }
+        triggerActiveUpdateFile()
     }
 
     /*
@@ -708,6 +714,7 @@
         } finally {
             _lock.unlock();
         }
+        triggerActiveUpdateFile()
     }
 
     /*
@@ -762,7 +769,7 @@
 
     /*
      * @function queueStatusUpdateFile
-     * Writes a 0 if the queue is closed and a 1 if the queue is open.
+     * Writes false if the queue is closed and true if the queue is open.
      */
     function queueStatusUpdateFile() {
         var queueOpen = isAccepting();
@@ -776,6 +783,21 @@
 
         $.writeToFile(queueOpen, QUEUE_OPEN_FILE, false);
     }
+
+    /*
+     * @function queueStatusUpdateFile
+     * Writes a true if a trigger is active and a false if no trigger is active.
+     */
+    function triggerActiveUpdateFile() {
+        var activeTrigger = getActive();
+
+        if (!$.isDirectory(FILE_DIR)) {
+            $.mkDir(FILE_DIR);
+        }
+        $.writeToFile(activeTrigger !== null ? "true" : "false", TRIGGER_ACTIVE_FILE, false);
+    }
+
+
 
     /*
      * @event command
@@ -989,6 +1011,8 @@
         // The in-memory queue is empty on boot; clear stale items from a previous run's
         // snapshot (their callbacks no longer exist). clear() keeps history and re-mirrors.
         clear();
+        triggerActiveUpdateFile();
+        queueStatusUpdateFile();
     });
 
     /*
