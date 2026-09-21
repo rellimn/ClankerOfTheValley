@@ -50,13 +50,17 @@
         SCRIPT = './custom/timedEventQueue/timedEventQueueSystem.js',
         TABLE = 'timedEventQueue',                                          // snapshot + history live here
         SETTINGS = 'timedEventQueueSettings',                              // panel-shared settings (accepting, display prefs)
-        HISTORY_CAP = 20;
+        HISTORY_CAP = 20,
+        FILE_DIR = "./addons/timedEventQueue/", // Files are put on the server directly, used for OBS browser source
+        QUEUE_OPEN_FILE= FILE_DIR + 'queueOpen.txt',
+        TRIGGER_ACTIVE_FILE= FILE_DIR + 'triggerActive.txt';
 
-    /*
-     * The helpers below that read/write `items`, `activeId`, `_timerId`, `accepting`, or
-     * `history` must be called while holding `_lock`. Consumer callbacks are always invoked
-     * AFTER the lock is released (see fire()).
-     */
+
+        /*
+         * The helpers below that read/write `items`, `activeId`, `_timerId`, `accepting`, or
+         * `history` must be called while holding `_lock`. Consumer callbacks are always invoked
+         * AFTER the lock is released (see fire()).
+         */
 
     /*
      * @function indexById
@@ -677,6 +681,7 @@
         } finally {
             _redeemableSyncLock.unlock();
         }
+        queueStatusUpdateFile()
         $.say("/announce " + (value ? $.lang.get("timedeventqueue.accepting.announce.on") : $.lang.get("timedeventqueue.accepting.announce.off")))
     }
 
@@ -753,6 +758,23 @@
         } finally {
             _lock.unlock();
         }
+    }
+
+    /*
+     * @function queueStatusUpdateFile
+     * Writes a 0 if the queue is closed and a 1 if the queue is open.
+     */
+    function queueStatusUpdateFile() {
+        var queueOpen = isAccepting();
+
+        if (!$.isDirectory(FILE_DIR)) {
+            $.mkDir(FILE_DIR);
+        }
+        if (isNaN(queueOpen)) {
+            queueOpen = 0;
+        }
+
+        $.writeToFile(queueOpen, QUEUE_OPEN_FILE, false);
     }
 
     /*
