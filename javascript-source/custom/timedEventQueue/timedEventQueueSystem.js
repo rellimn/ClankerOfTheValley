@@ -794,7 +794,7 @@
         if (!$.isDirectory(FILE_DIR)) {
             $.mkDir(FILE_DIR);
         }
-        $.writeToFile(activeTrigger !== null ? "true" : "false", TRIGGER_ACTIVE_FILE, false);
+        $.writeToFile(activeTrigger !== null && !activeTrigger.paused ? "true" : "false", TRIGGER_ACTIVE_FILE, false);
     }
 
 
