@@ -551,11 +551,13 @@
             it.paused = true;
             clearActiveTimer();
             mirror();
-            return true;
+        } catch {
+            return false;
         } finally {
             _lock.unlock();
         }
         triggerActiveUpdateFile()
+        return true;
     }
 
     /*
@@ -590,11 +592,13 @@
                 scheduleActiveTimer(it.id, it.remainingMs);
             }
             mirror();
-            return true;
+        } catch {
+            return false;
         } finally {
             _lock.unlock();
         }
         triggerActiveUpdateFile()
+        return true;
     }
 
     /*
@@ -794,7 +798,7 @@
         if (!$.isDirectory(FILE_DIR)) {
             $.mkDir(FILE_DIR);
         }
-        $.writeToFile(activeTrigger !== null ? "true" : "false", TRIGGER_ACTIVE_FILE, false);
+        $.writeToFile(activeTrigger !== null && !activeTrigger.paused ? "true" : "false", TRIGGER_ACTIVE_FILE, false);
     }
 
 
