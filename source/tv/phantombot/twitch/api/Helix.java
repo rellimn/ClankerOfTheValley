@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ConcurrentMap;
@@ -1937,6 +1938,96 @@ public class Helix {
         return this.handleMutatorAsync(endpoint, () -> {
             return this.handleRequest(HttpMethod.DELETE, endpoint, "", this.chooseModeratorOAuth("moderator:manage:chat_messages"));
         });
+    }
+
+    /**
+     * Gets the current chat pin. Uses the same moderator credentials as chat deletion.
+     *
+     * @param broadcaster_id The broadcaster whose chat pin to retrieve.
+     * @return The API response, with an empty data array when nothing is pinned.
+     */
+    public JSONObject getPinnedChatMessage(String broadcaster_id) {
+        return this.getPinnedChatMessageAsync(broadcaster_id).block();
+    }
+
+    /**
+     * Asynchronously gets the current chat pin without reusing a cached snapshot.
+     *
+     * @param broadcaster_id The broadcaster whose chat pin to retrieve.
+     * @return The API response.
+     */
+    public Mono<JSONObject> getPinnedChatMessageAsync(String broadcaster_id) {
+        String endpoint = this.chatPinEndpoint(broadcaster_id, null);
+        // Pins can be replaced or removed through Twitch itself; always read fresh state.
+        return this.handleQueryAsync("GET " + endpoint + UUID.randomUUID(), () -> {
+            return this.handleRequest(HttpMethod.GET, endpoint, "", this.chooseModeratorOAuth("moderator:manage:chat_messages"));
+        });
+    }
+
+    /**
+     * Pins a message until it is unpinned, replaced, or the stream ends.
+     *
+     * @param broadcaster_id The broadcaster whose chat contains the message.
+     * @param message_id The message to pin.
+     * @return The API response (HTTP 204 on success).
+     */
+    public JSONObject pinChatMessage(String broadcaster_id, String message_id) {
+        return this.pinChatMessageAsync(broadcaster_id, message_id).block();
+    }
+
+    /**
+     * Asynchronously pins a message for the remainder of the stream.
+     *
+     * @param broadcaster_id The broadcaster whose chat contains the message.
+     * @param message_id The message to pin.
+     * @return The API response.
+     */
+    public Mono<JSONObject> pinChatMessageAsync(String broadcaster_id, String message_id) {
+        if (message_id == null || message_id.isBlank()) {
+            throw new IllegalArgumentException("message_id");
+        }
+        String endpoint = this.chatPinEndpoint(broadcaster_id, message_id);
+        // Omitting duration_seconds means until stream end, not the send API's 20 minutes.
+        return this.handleMutatorAsync("PUT " + endpoint, () -> {
+            return this.handleRequest(HttpMethod.PUT, endpoint, "", this.chooseModeratorOAuth("moderator:manage:chat_messages"));
+        });
+    }
+
+    /**
+     * Unpins the specified message without affecting a replacement pin.
+     *
+     * @param broadcaster_id The broadcaster whose chat contains the pin.
+     * @param message_id The pinned message to remove.
+     * @return The API response (HTTP 204 on success).
+     */
+    public JSONObject unpinChatMessage(String broadcaster_id, String message_id) {
+        return this.unpinChatMessageAsync(broadcaster_id, message_id).block();
+    }
+
+    /**
+     * Asynchronously unpins the specified message.
+     *
+     * @param broadcaster_id The broadcaster whose chat contains the pin.
+     * @param message_id The pinned message to remove.
+     * @return The API response.
+     */
+    public Mono<JSONObject> unpinChatMessageAsync(String broadcaster_id, String message_id) {
+        if (message_id == null || message_id.isBlank()) {
+            throw new IllegalArgumentException("message_id");
+        }
+        String endpoint = this.chatPinEndpoint(broadcaster_id, message_id);
+        return this.handleMutatorAsync("DELETE " + endpoint, () -> {
+            return this.handleRequest(HttpMethod.DELETE, endpoint, "", this.chooseModeratorOAuth("moderator:manage:chat_messages"));
+        });
+    }
+
+    private String chatPinEndpoint(String broadcaster_id, @Nullable String message_id) {
+        if (broadcaster_id == null || broadcaster_id.isBlank()) {
+            throw new IllegalArgumentException("broadcaster_id");
+        }
+        return "/chat/pins?" + this.qspValid("broadcaster_id", broadcaster_id)
+                + this.qspValid("&moderator_id", this.chooseModeratorId("moderator:manage:chat_messages"))
+                + this.qspValid("&message_id", message_id);
     }
 
     /**
@@ -3960,7 +4051,8 @@ public class Helix {
         String endpoint = "/chat/messages";
 
         return this.handleMutatorAsync(endpoint + js.toString(), () -> {
-            return this.handleRequest(HttpMethod.POST, endpoint, js.toString(), use_app_token ? CaselessProperties.instance().getProperty("appoauth").replaceFirst("oauth:", "") : null);
+            return this.handleRequest(HttpMethod.POST, endpoint, js.toString(),
+                    CaselessProperties.instance().getProperty(use_app_token ? "appoauth" : "oauth").replaceFirst("oauth:", ""));
         });
     }
 

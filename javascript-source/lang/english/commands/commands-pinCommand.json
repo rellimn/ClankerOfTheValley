@@ -1,0 +1,15 @@
+{
+    "pincommand.pin.usage": "Usage: !pin <message> - pins until removed, replaced, or the stream ends.",
+    "pincommand.unpin.usage": "Usage: !unpin",
+    "pincommand.toolong": "The pinned message must be 500 characters or fewer.",
+    "pincommand.busy": "A pin command is already running. Please try again shortly.",
+    "pincommand.pin.success": "Message pinned until removed, replaced, or the stream ends.",
+    "pincommand.unpin.success": "Message unpinned.",
+    "pincommand.empty": "There is no pinned chat message.",
+    "pincommand.changed": "That message is no longer pinned. The pin may have been removed or replaced.",
+    "pincommand.authorization": "Twitch denied the request. Reauthorize the bot with user:write:chat and moderator:manage:chat_messages, and make sure it is a moderator. If using broadcaster credentials for moderation, reauthorize the broadcaster too.",
+    "pincommand.ratelimit": "Twitch is rate limiting pin requests. Please try again shortly.",
+    "pincommand.failed": "The pin command failed. Please check the bot logs and try again.",
+    "pincommand.pin.failed": "The message was posted, but could not be pinned. Check the bot logs and moderation permissions before trying again.",
+    "pincommand.dropped": "Twitch did not send the message, so nothing was pinned. Check chat restrictions or AutoMod."
+}

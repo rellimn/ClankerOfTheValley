@@ -39,6 +39,8 @@ Parameters enclosed in parenthesis `( )` are optional when using the command
 | ./commands/highlightCommand.js | !clearhighlights | - Clear the current highlights |
 | ./commands/lastseenCommand.js | !lastseen [username] | - Find out when the given user was last seen in the channel |
 | ./commands/nameConverter.js | !namechange [oldname] [newname] | - Convert someones old Twitch username to his/her new Twitch name. The user will be able to keep their points, time, quotes, and more. |
+| ./commands/pinCommand.js | !pin [message] | - Send and pin a message until manually unpinned, replaced, or the stream ends. Moderators only. |
+| ./commands/pinCommand.js | !unpin | - Remove the current pinned chat message. Moderators only. |
 | ./commands/streamCommand.js | !setgame [game name] | - Set your Twitch game title. |
 | ./commands/streamCommand.js | !settitle [stream title] | - Set your Twitch stream title. |
 | ./commands/streamCommand.js | !vod | - Displays stream uptime and current VOD or, if offline, the last VOD available. |
