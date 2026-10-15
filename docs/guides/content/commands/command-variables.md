@@ -2990,6 +2990,129 @@ No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
 
 &nbsp;
 
+#### nexttime
+
+Defined in script: _./javascript-source/core/transformers/nexttime.js_
+
+**Formulas:**
+
+- `(nexttime time:str)` - converts a 24-hour HH:MM time to the next occurrence as a date/time string with a UTC offset
+
+**Labels:** twitch discord noevent time
+
+
+_NOTE: Uses the bot's configured timezone (set with !timezone, default GMT). The result can be passed to (countdown)._
+
+_NOTE: Selects today if the time is still ahead, otherwise the next day on which that local time exists. Seconds are set to zero. The result is recalculated each time the command runs._
+
+_NOTE: During daylight-saving changes, nonexistent local times are skipped and repeated local times use the first occurrence still in the future._
+
+
+**Example:**
+```text
+Caster: !addcom !alarm Time until 01:30: (countdown (nexttime 01:30))
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### stoptimer
+
+Defined in script: _./javascript-source/core/transformers/timers.js_
+
+**Formulas:**
+
+- `(stoptimer name:str)` - stops the named timer without affecting other timers; returns no text
+
+**Labels:** twitch commandevent time
+
+
+_NOTE: Requires moderator permission. Stopping a name that is not active does nothing. Already dispatched commands cannot be recalled._
+
+
+**Example:**
+```text
+Caster: !addcom !stoptimer (stoptimer (1))
+Caster: !stoptimer raid
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### timer
+
+Defined in script: _./javascript-source/core/transformers/timers.js_
+
+**Formulas:**
+
+- `(timer name:str datetime:str | message:str)` - starts or replaces a named countdown to the given future datetime, announcing immediately and then every 10 minutes
+- `(timer name:str datetime:str minutes:number | message:str)` - specifies the announcement interval in minutes (1-1440)
+
+**Labels:** twitch commandevent time
+
+
+_NOTE: Requires moderator permission. Names are case-insensitive, 1-64 letters, digits, underscores or hyphens. Different names run independently; reusing a name replaces only that timer. Returns no text on success._
+
+_NOTE: Accepts datetime strings supported by Date.parse. Quote datetime strings containing spaces. Include an explicit UTC offset to avoid relying on the Java runtime's timezone and parsing rules. Use (nexttime HH:MM) for the next occurrence in the bot timezone (!timezone). Invalid or past deadlines leave an existing timer unchanged._
+
+_NOTE: Saves one absolute deadline. Timers resume after a restart and stop silently at that deadline._
+
+_NOTE: Escape every parenthesis in the message's tags as `\(` and `\)` to evaluate them on each announcement. Unescaped tags run when the timer is created. The message supports (remaining), (deadline), (timername), and Twitch command tags, using the original sender, arguments and tags. Side-effect tags such as (command) execute on every announcement, including the first._
+
+_NOTE: The generic !timer example takes the message as command arguments, so its message tags need no escaping. For a fixed response containing escaped tags or nested (command), save the response through the panel; !addcom parses backslashes and restricts nested command tags._
+
+
+**Example:**
+```text
+Caster: !addcom !timer (timer (1) (2) | (3>))
+Caster: !timer raid 2026-12-25T01:30:00+01:00 Raid starts in (remaining)!
+Caster: !timer break 2026-12-25T02:00:00+01:00 Break in (remaining)!
+```
+
+**Example:**
+```text
+Caster: !addcom !timerat (timer (1) (nexttime (2)) | (3>))
+Caster: !timerat raid 01:30 Raid starts in (remaining)!
+```
+
+**Example:**
+```text
+Panel custom-command response: (timer raid (nexttime (1)) 10 | Raid in \(remaining\)! \(command raidstatus\))
+```
+
+**Example:**
+```text
+Panel custom-command response: (timer christmas "December 25 2026 00:00:00 GMT+0100" 10 | Christmas in \(remaining\)!)
+```
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | No&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### timerremaining
+
+Defined in script: _./javascript-source/core/transformers/timers.js_
+
+**Formulas:**
+
+- `(timerremaining name:str)` - shows the named timer's remaining time, or an inactive message if it is not running
+
+**Labels:** twitch noevent time
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
 ### timedEventQueueTransformers
 #### queueaccept
 
@@ -3904,6 +4027,62 @@ No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
 
 &nbsp;
 
+### timers.js
+
+#### remaining
+
+Defined in script: _./javascript-source/core/transformers/timers.js_
+
+**Formulas:**
+
+- `(remaining)` - the time remaining until this timer's saved deadline
+
+**Custom Arguments:**
+
+- `(remaining:str)` - formatted remaining time
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### deadline
+
+Defined in script: _./javascript-source/core/transformers/timers.js_
+
+**Formulas:**
+
+- `(deadline)` - this timer's saved deadline as an ISO date/time string, usable with (countdown)
+
+**Custom Arguments:**
+
+- `(deadline:str)` - fixed deadline including a timezone offset
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
+#### timername
+
+Defined in script: _./javascript-source/core/transformers/timers.js_
+
+**Formulas:**
+
+- `(timername)` - this timer's name
+
+**Custom Arguments:**
+
+- `(timername:str)` - timer name
+
+Raw?[^raw]&nbsp;&nbsp; | Cached?[^cached]&nbsp;&nbsp; | Cancels?[^cancels]
+-------|-----------|----------
+No&nbsp;&nbsp; | Yes&nbsp;&nbsp; | No
+
+&nbsp;
+
 ### welcomeSystem.js
 
 #### names
@@ -4003,6 +4182,20 @@ Defined in script: _./javascript-source/commands/customCommands.js_
 Global&nbsp;&nbsp; | Local
 -------|-------
 Yes&nbsp;&nbsp; | No
+
+**Labels Used:** twitch commandevent noevent
+
+&nbsp;
+
+### timers.js
+
+Defined in script: _./javascript-source/core/transformers/timers.js_
+
+#### Hook: countdownTimerAnnouncement
+
+Global&nbsp;&nbsp; | Local
+-------|-------
+Yes&nbsp;&nbsp; | Yes
 
 **Labels Used:** twitch commandevent noevent
 

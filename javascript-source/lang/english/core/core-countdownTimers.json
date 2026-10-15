@@ -1,0 +1,7 @@
+{
+    "countdowntimer.usage": "Usage: (timer name datetime [interval minutes, 1-1440; default 10] | message). Quote datetime strings containing spaces. Escape message tag parentheses as \\( and \\).",
+    "countdowntimer.stopusage": "Usage: (stoptimer name). Names may contain 1-64 letters, digits, underscores or hyphens.",
+    "countdowntimer.permission": "Moderator permission is required to start or stop countdown timers.",
+    "countdowntimer.inactive": "Timer $1 is not active.",
+    "countdowntimer.invalid": "The timer deadline must be a valid future datetime. Include a UTC offset, or use (nexttime HH:MM) for the next local time."
+}
