@@ -3,7 +3,7 @@
     "pincommand.unpin.usage": "Usage: !unpin",
     "pincommand.toolong": "The pinned message must be 500 characters or fewer.",
     "pincommand.busy": "A pin command is already running. Please try again shortly.",
-    "pincommand.pin.success": "Message pinned until removed, replaced, or the stream ends.",
+    "pincommand.pin.success": "",
     "pincommand.unpin.success": "Message unpinned.",
     "pincommand.empty": "There is no pinned chat message.",
     "pincommand.changed": "That message is no longer pinned. The pin may have been removed or replaced.",
